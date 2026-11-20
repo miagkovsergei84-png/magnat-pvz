@@ -1,0 +1,33 @@
+/* The menu is a real, localized overlay; the art contains no fake controls. */
+#ov:has(.startMenu){position:fixed;inset:0;z-index:1000;padding:0;border-radius:0;background:#061334}
+#ov:has(.startMenu)>.card{width:100%;height:100%;max-width:none;max-height:none;padding:0;border-radius:0;background:#061334;align-items:center;gap:0;overflow:auto}
+.startMenu{--menu-min-height:520px;position:relative;isolation:isolate;display:flex;flex-direction:column;width:100%;max-width:480px;min-height:max(100%,var(--menu-min-height));box-sizing:border-box;overflow:hidden;padding:max(14px,env(safe-area-inset-top)) 18px max(14px,env(safe-area-inset-bottom));background:#082755;color:#fff;text-align:center;font-family:var(--body,sans-serif)}
+.startMenu__art{position:absolute;z-index:-2;--art-width:max(100%,calc(max(100vh,var(--menu-min-height)) * .5625));width:var(--art-width);left:min(calc((100% - var(--art-width)) / 2),calc(100% - var(--art-width) * .955 - 6px));top:50%;aspect-ratio:576/1024;transform:translateY(-50%);background:url('../assets/campaign/start-menu-photo-chibi-20261111.jpg') center/100% 100% no-repeat;pointer-events:none}
+.startMenu::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(3,16,53,.38) 0%,transparent 30%,transparent 60%,rgba(3,13,42,.86) 100%);pointer-events:none}
+.startMenu__brand{position:relative;z-index:1;flex:none;filter:drop-shadow(0 3px 0 #051132)}
+.card .startMenu__brand h1{margin:0;font-family:var(--display,var(--body,sans-serif));font-weight:900;font-size:clamp(30px,8.8vw,47px);line-height:.99;letter-spacing:.01em;overflow-wrap:normal;text-wrap:balance;color:#fff;-webkit-text-stroke:1px #08183d}
+.card .startMenu[lang="en"] .startMenu__brand h1{font-size:clamp(23px,7vw,38px)}
+/* Bungee is Latin-only; Nunito provides the same rounded weight in Cyrillic. */
+.card .startMenu[lang="ru"] .startMenu__brand h1{font-family:"Nunito","Segoe UI",sans-serif;font-weight:1000;letter-spacing:-.025em;-webkit-text-stroke:1.3px #08183d;text-shadow:0 3px 0 #08183d,0 5px 6px #061334a8}
+.card .startMenu[lang="en"] .startMenu__brand h1{font-family:"Bungee","Nunito",sans-serif;letter-spacing:.015em}
+.startMenu__brand h1 span,.startMenu__brand h1 strong{display:block}
+.startMenu__brand h1 strong{font-size:1.28em;color:#ffb52c;text-shadow:0 3px 0 #b65003}
+.startMenu__slogan{display:inline-block;box-sizing:border-box;max-width:calc(100% - 48px);margin:4px auto 0!important;padding:4px 8px;border-radius:8px;background:rgba(3,16,53,.91);color:#fff!important;font-family:"Nunito",system-ui,sans-serif;font-size:clamp(11px,2.9vw,14px);font-weight:900;letter-spacing:.01em;line-height:1.2!important}
+.startMenu__scene{position:relative;flex:1 1 auto;min-height:100px;pointer-events:none}
+/* Redraw the sign's interior without a sticker. The letters and cube follow
+   the slope of the illuminated frame in the artwork. */
+.startMenu__sign{position:absolute;left:64%;top:25.4%;width:31.5%;height:8.4%;box-sizing:border-box;background:linear-gradient(155deg,#0759d6,#0757c9 62%,#06489d);clip-path:polygon(0 30%,100% 0,100% 76%,0 100%);color:#fff}
+.startMenu__signRow{position:absolute;left:5%;right:5%;top:50%;display:flex;align-items:center;justify-content:center;gap:5%;transform:translateY(-50%) rotate(-7.3deg)}
+.startMenu__signText{display:block;flex:0 1 61%;min-width:0;font:900 clamp(11px,3vw,14px)/1.25 "Nunito","Segoe UI",sans-serif;text-align:center;white-space:normal;overflow-wrap:normal;letter-spacing:0;text-shadow:0 1px 2px #043e83}
+.startMenu__signCube{display:block;flex:0 0 25%;width:25%;height:auto;filter:drop-shadow(0 0 3px #39e5ff)}
+.startMenu__controls{position:relative;z-index:1;flex:none}
+.startMenu__actions{display:flex;flex-direction:column;gap:10px}
+.startMenu__button{width:100%;min-height:52px;padding:10px 14px;border:3px solid #ffda6b;border-radius:18px;font:1000 clamp(16px,4.8vw,21px)/1.15 "Nunito",system-ui,sans-serif;letter-spacing:.015em;text-transform:uppercase;cursor:pointer;text-shadow:0 2px 1px #663109;box-shadow:0 4px 0 #9e3a00,0 7px 12px #061334b8}
+.startMenu__button--primary{background:linear-gradient(#ffcf32,#ff7900);color:#fff}
+.startMenu__button--secondary{border-color:#71dcff;background:linear-gradient(#13a9f3,#0751d2);color:#fff;text-shadow:0 2px 1px #052969;box-shadow:0 4px 0 #073183,0 7px 12px #061334b8}
+.startMenu__footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.startMenu__settings,.startMenu__languages button{min-height:44px;border:1px solid #5ad1ff;border-radius:12px;background:rgba(5,39,105,.96);color:white;font:800 13px/1 var(--body,sans-serif);cursor:pointer}
+.startMenu__settings{padding:8px 12px;text-align:left}.startMenu__settings span{font-size:19px;vertical-align:middle}
+.startMenu__languages{display:flex;gap:5px}.startMenu__languages button{min-width:47px;padding:7px}.startMenu__languages button[aria-pressed="true"]{background:#ffae1a;border-color:#ffe07b;color:#10264a}
+.startMenu button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media (max-height:600px) and (orientation:landscape){.startMenu{--menu-min-height:570px}.startMenu__scene{min-height:105px}.startMenu__art{top:calc(50% + 85px)}}

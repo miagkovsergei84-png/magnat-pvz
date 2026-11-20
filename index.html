@@ -1,0 +1,163 @@
+<!doctype html><html><head><meta charset=utf8><script src="vendor/vk-bridge-3.0.2/browser.min.js"></script><script>(function(){var b=window.vkBridge;if(!b||typeof b.send!=="function")return;try{var p=b.send("VKWebAppInit",{});if(p&&typeof p.catch==="function")p.catch(function(){});}catch(e){}})();</script><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="styles/game.css?v=a4a477526673"><link rel="stylesheet" href="styles/campaign.css?v=6755ed50dee6"><link rel="stylesheet" href="styles/start-menu.css?v=4fc2b5c95c45"><link id="gameIcon" rel="icon" type="image/png" href="assets/campaign/icon-photo-ru-chibi-20261111.png"><link rel="stylesheet" href="styles/loading-screen.css?v=7d34b9e7e475"></head><body><script src="src/loading-screen.js?v=34b9065d002b"></script><script>PptLoadingScreen.mount();window.addEventListener("error",function(e){if(document.getElementById("pptLoading")&&(e.error||(e.target&&e.target.tagName==="SCRIPT")))PptLoadingScreen.fail();},true);</script>
+<title>Pickup Point Tycoon</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="styles/village-install.css?v=e1bb32fbe0e6"><link rel="stylesheet" href="styles/village-house.css?v=28d063190547">
+<link rel="stylesheet" href="styles/fonts.css?v=b4c929bc2e0f">
+<style>
+/* Layout: one phone-sized column — HUD strip, warehouse canvas, hint line, "in hands" tray; DOM overlays for menus. Single dark warehouse look. */
+:root{
+  --bg:#15181c; --panel:#1f242a; --panel2:#2a3038; --ink:#eef1ec; --muted:#8f9aa5;
+  --accent:#ff7a1a; --good:#4cd18a; --bad:#ff5d5d; --gold:#ffd166; --ai:#5bd6ff;
+  --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Nunito","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px;gap:6px;box-sizing:border-box}
+#hud{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.chip{background:var(--panel);border-radius:8px;padding:4px 7px;font-weight:800;font-size:12px;white-space:nowrap}
+.chip.time{font-family:var(--display);font-weight:400;letter-spacing:.04em}
+.chip.cash{color:var(--good)} .chip.cash.neg{color:var(--bad)}
+.chip.stars{color:var(--gold)}
+#hCombo{background:#3a2a1c;color:var(--accent)} #hCombo.hot{background:var(--accent);color:#1a0f05}
+#evt{background:var(--accent);color:#1a0f05}
+.spacer{flex:1}
+.ibtn{background:var(--panel2);color:var(--ink);border:0;border-radius:8px;padding:4px 9px;font:800 13px var(--body);cursor:pointer}
+.ibtn:focus-visible,.btn:focus-visible,.slot:focus-visible,.item button:focus-visible,.pick:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
+canvas{display:block;border-radius:12px;touch-action:none;background:#2b3036}
+#hint{font-size:12px;font-weight:800;color:#ffd8b8;text-align:center;min-height:16px;line-height:16px}
+#tray{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:10px;padding:6px 10px;min-height:50px;box-sizing:border-box}
+#tray .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800}
+#slots{display:flex;gap:8px;flex:1;min-width:0;align-items:center}
+.slot{width:44px;height:44px;border-radius:8px;border:2px dashed #3a424c;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.slot.on{border:2px solid var(--accent);background:#2f2a24}
+.slot.full{border-style:solid;border-color:#3a424c}
+.emptytxt{font-size:12px;color:var(--muted)}
+#ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,12,14,.72);border-radius:12px;padding:12px;box-sizing:border-box}
+.card{background:var(--panel);border-radius:14px;padding:18px;width:100%;max-width:340px;max-height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
+.card h1{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.05;margin:0;text-wrap:balance}
+.card h2{font-family:var(--display);font-weight:400;font-size:20px;margin:0;text-wrap:balance}
+.card p{margin:0;line-height:1.45;color:#cfd5d0}
+.tag{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:800}
+.btn{background:var(--accent);color:#1a0f05;border:0;border-radius:10px;padding:12px 14px;font:800 16px var(--body);cursor:pointer;width:100%}
+.btn.sec{background:var(--panel2);color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px}
+.testrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.testrow button{background:var(--panel2);color:var(--ink);border:0;border-radius:8px;padding:6px 10px;font:800 13px var(--body);cursor:pointer}
+.rows{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-variant-numeric:tabular-nums}
+.rows .v{text-align:right;font-weight:800}
+.rows .tot{border-top:1px solid #3a424c;padding-top:6px;font-weight:800}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.goals{display:flex;flex-direction:column;gap:6px;background:var(--panel2);border-radius:10px;padding:10px}
+.goal{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:7px;font-weight:700;font-size:14px}
+.goal .st{color:#4a525c;font-size:18px;line-height:1} .goal.ok .st{color:var(--gold)}
+.bigstars{font-size:34px;letter-spacing:6px;color:#4a525c;text-align:center} .bigstars b{color:var(--gold);font-weight:400}
+.cat{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:800;margin-top:4px}
+.item{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px}
+.item b{font-size:14px} .item small{color:var(--muted);font-size:12px}
+.item>b{flex:1 1 120px;min-width:0;overflow-wrap:anywhere}
+.item>small{flex:0 0 100%;min-width:0;line-height:1.35;overflow-wrap:anywhere}
+.item button{flex:0 1 auto;box-sizing:border-box;margin-left:auto;max-width:min(132px,100%);min-height:44px;background:var(--accent);color:#1a0f05;border:0;border-radius:8px;padding:8px 10px;font:800 13px/1.2 var(--body);cursor:pointer;min-width:74px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.item button:disabled{background:#3a424c;color:var(--muted);cursor:default}
+.guidePanel{display:flex;flex-direction:column;gap:6px;border:2px solid #5bd6ff;border-radius:10px;padding:10px;background:#1b3541;color:var(--ink)}
+.guideNarratorHeader{display:flex;align-items:center;gap:8px}
+.guideNarratorPortrait{width:48px;height:48px;object-fit:cover;object-position:center 16%;border-radius:50%;border:2px solid #5bd6ff;background:#15304a;flex:none}
+.guidePanel p{font-size:13px;line-height:1.4;color:var(--ink)}
+.guideAck{align-self:flex-start;min-height:40px;padding:6px 14px;border:0;border-radius:8px;background:#5bd6ff;color:#10232c;font:800 13px var(--body);cursor:pointer}
+.guideAck:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.guidePulse{outline:2px solid #5bd6ff;outline-offset:1px;animation:guidePulse 1.6s ease-in-out infinite}
+@keyframes guidePulse{0%,100%{outline-color:#5bd6ff}50%{outline-color:#ffd166}}
+.storyQueue,.storyHelper{height:148px;overflow:hidden;position:relative;border-radius:12px;background:linear-gradient(145deg,#284557,#192633);border:1px solid #547688}
+.storyQueuePeople{position:absolute;inset:5px 0 0;display:flex;justify-content:center;align-items:flex-end;animation:storyDeparture 2s ease-out forwards}
+.storyQueuePerson{position:relative;flex:0 0 20%;max-width:90px;height:135px}
+.storyQueuePerson img{width:100%;height:100%;object-fit:contain}
+.storyQueuePerson i{position:absolute;right:0;top:0;font-style:normal;font-size:20px;background:#fff;border-radius:50%;padding:3px}
+@keyframes storyDeparture{from{transform:translateX(0);opacity:1}to{transform:translateX(110%);opacity:0}}
+.storyHelper{display:flex;justify-content:center;align-items:flex-start}.storyHelper img{width:115px;height:170px;object-fit:cover;object-position:top}
+.storySpeaker{margin:10px 0 3px!important;font-weight:800;color:#5bd6ff!important}.storyText{color:var(--ink)!important;line-height:1.45}
+.storyFade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9999}
+.pick{display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--panel2);color:var(--ink);border:2px solid transparent;border-radius:10px;padding:10px;font:700 13px var(--body);cursor:pointer}
+.pick b{font-size:14px} .pick small{color:var(--muted);font-size:12px} .pick.on{border-color:var(--accent);background:#2f2a24}
+.stripe{height:10px;border-radius:5px;background:repeating-linear-gradient(-45deg,var(--accent) 0 10px,#1a0f05 10px 20px)}
+.scard{display:flex;flex-direction:column;gap:6px;background:var(--panel2);border-radius:10px;padding:10px}
+.scard small{color:var(--muted);font-size:12px;line-height:1.35}
+.stats{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;font-weight:800;color:#cfd5d0;font-variant-numeric:tabular-nums}
+.stats i{font-style:normal;color:var(--gold);letter-spacing:1px}
+.roles{display:flex;gap:6px}
+.rbtn{flex:1;background:#20252b;color:var(--ink);border:2px solid transparent;border-radius:8px;padding:6px 4px;font:800 12px var(--body);cursor:pointer}
+.rbtn.on{border-color:var(--accent);background:#2f2a24}
+.hire,.fire{align-self:flex-start;border:0;border-radius:8px;padding:7px 12px;font:800 13px var(--body);cursor:pointer}
+.hire{background:var(--accent);color:#1a0f05} .hire:disabled{background:#3a424c;color:var(--muted);cursor:default}
+.fire{background:transparent;color:var(--bad);padding:4px 0}
+.lvup{color:var(--gold);font-weight:800;font-size:13px}
+[hidden]{display:none!important}
+.soundVolume{font-weight:800}.soundVolume output{float:right}#sfxVolume,#musicVolume{display:block;box-sizing:border-box;width:100%;max-width:100%;margin-inline:0;min-height:44px;accent-color:var(--accent)}
+#bSound{flex-shrink:0;min-height:44px;min-width:44px}#tray .emptytxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<link rel="stylesheet" href="styles/network.css?v=0fd697c4c43d">
+<link rel="stylesheet" href="styles/hud.css?v=e8051791c1e5">
+<link rel="stylesheet" href="styles/wallpaper.css?v=b9b1ebae65a1">
+
+<link rel="stylesheet" href="styles/board-layout.css?v=832771f535e7">
+<style>
+/* Give the separate automatic locker its own space without shrinking the
+   playable field when the wide-screen side panels have enough room. */
+@media (min-width:701px) and (orientation:landscape){
+  body[data-wallpaper] #app.hasAutoLocker:not(.dual){
+    grid-template-columns:minmax(0,1fr) minmax(300px,min(calc((100dvh - 35px)*.651515),calc(100vw - 460px))) minmax(0,1fr);
+  }
+}
+</style>
+<link rel="stylesheet" href="styles/campaign-progress.css?v=38fab6f04dff">
+
+<div id="app">
+  <div id="hud">
+    <span class="chip" id="hDay">—</span>
+    <span class="chip time" id="hTime">2:00</span>
+    <span class="chip cash" id="hCash">$0</span>
+    <span class="chip stars" id="hStars">★5.0</span>
+    <span class="chip" id="hGoal">0/0</span>
+    <span class="chip" id="hCombo">×1</span>
+    <span class="chip" id="evt" hidden></span>
+    <span class="spacer"></span>
+    <button class="ibtn" id="bLang" type="button">EN</button>
+    <button class="ibtn" id="bPause" type="button" aria-label="Pause">II</button>
+  </div>
+  <div id="networkBar">
+    <button class="ibtn branchArrow" id="bPrevBranch" type="button" aria-label="Previous branch">‹</button>
+    <span id="branchLabel"></span>
+    <button class="ibtn" id="bAwayGoals" type="button" hidden></button>
+    <button class="ibtn branchArrow" id="bNextBranch" type="button" aria-label="Next branch">›</button>
+    <button class="ibtn" id="bExpand" type="button"></button>
+    <button class="ibtn" id="bCancelExpansion" type="button" hidden></button>
+  </div>
+  <div id="networkTotals" hidden></div>
+  <div id="saveNotice" role="status" hidden></div>
+  <div id="stage">
+    <section class="branchPane selected" id="branch1">
+      <button class="branchHead" id="bBranch1" type="button"></button>
+      <div class="branchStats" id="stats1"></div>
+      <div class="branchScene" id="scene1"><canvas id="cv"></canvas><div id="ov"></div></div>
+    </section>
+    <section class="branchPane" id="branch2" hidden>
+      <button class="branchHead" id="bBranch2" type="button"></button>
+      <div class="branchStats" id="stats2"></div>
+      <div class="branchScene" id="scene2"><canvas id="cv2"></canvas></div>
+    </section>
+  </div>
+  <div id="hint"></div>
+  <div id="tray"><span class="lbl" id="tLbl">В руках</span><div id="slots" role="group" aria-labelledby="tLbl"></div><div id="trayActions"><button class="ibtn" id="bHouseTools" type="button" data-house-tools="1" hidden>Дом</button><button class="ibtn" id="bSound" type="button" aria-label="Action sounds">Sound</button></div></div>
+</div>
+<div id="storyFade" class="storyFade" aria-hidden="true"></div>
+
+<script src="src/wallpaper.js?v=d8c73bb580f9"></script><script src="src/save.js?v=9bd13c99ad3b"></script><script src="src/network.js?v=b00cfd5970e0"></script><script src="src/branch-runtime.js?v=5230e818beed"></script><script src="src/character-assets.js?v=441754f09cf2"></script><script src="src/character-atlases.js?v=f55b558d6005"></script><script src="src/visitor-walk-data.js?v=ed52ae342b27"></script><script src="src/characters.js?v=e0a5e1f826a6"></script><script src="src/balance.js?v=c5603ab47663"></script><script src="src/day-config.js?v=a78678047107"></script><script src="src/strings.js?v=08bd588739b6"></script><script src="src/layout.js?v=3989ff653e60"></script><script src="src/catalog.js?v=909619763dad"></script><script src="src/workers.js?v=186753121db6"></script><script src="src/contracts.js?v=96e080353bb3"></script><script src="src/platform.js?v=4fa6473077af"></script><script src="src/environment-sample.js?v=f3bc4b1c61d7"></script><script src="src/contract-celebration.js?v=5d4e25a0aa6d"></script><script src="src/audio-controller.js?v=196d90edb07a"></script><script src="src/music-director.js?v=d28b7c509248"></script><script src="src/player-sfx.js?v=32cbc4c30a23"></script><script src="src/campaign.js?v=a088637046dd"></script><script src="src/story-content.js?v=6801253ec244"></script><script src="src/campaign-ui.js?v=7754c2448565"></script><script src="src/postgame.js?v=203396697fbe"></script><script src="src/postgame-ui.js?v=0a8a2bcc569d"></script><script src="src/start-menu.js?v=fc38b8d91a02"></script><script src="src/parcel-locker-campaign.js?v=201658d7b645"></script><script src="src/parcel-locker-visual.js?v=29f12965819b"></script><script src="src/village-home.js?v=25e703ff30f9"></script><script src="src/village-house-perks.js?v=19d22364f8ca"></script><script src="src/village-house-art.js?v=89ee1f7217db"></script><script src="src/village-house-search.js?v=d39b24783a31"></script><script src="src/village-house-ui.js?v=2ce1a6058f21"></script><script src="src/village-install.js?v=a6e7ebf61ca1"></script><script src="src/main.js?v=f19e5149c320"></script>
+
+</body></html>
+
+
+

@@ -1,0 +1,24 @@
+/* Game HUD skin: compact slate panels and warm status accents. */
+#hud{background:#202a33;border:1px solid #45515b;border-radius:10px;padding:4px;gap:4px;box-sizing:border-box}
+#hud .chip{background:#303b45;color:#e9eef1;border-radius:6px;font-size:12px;line-height:18px;padding:4px 7px}
+#hud #hDay{color:#c3cdd4}
+#hud #hTime{background:#303b45;color:#ffd09d;letter-spacing:0}
+#hud #hCash{color:#ffd09d}
+#hud #hCash.neg{color:#ff8585}
+#hud #hStars{color:#ffcf70}
+#hud #hCombo{background:#40342c;color:#ffc18a}
+#hud #hCombo.hot,#hud #evt{background:#e58438;color:#20170f}
+#hud .ibtn,#networkBar .ibtn{background:#35424c;color:#f1f4f4;border:1px solid #52616b;border-radius:7px}
+#hud .ibtn:hover,#networkBar .ibtn:not(:disabled):hover{background:#46545f}
+#networkBar{color:#d5dfe4;gap:4px}
+#networkTotals{color:#b9c9d2}
+#branchLabel{font-weight:800;padding-inline:5px}
+#app.dual #branchLabel{color:#ffc18a}
+#networkBar .branchArrow{color:#ffc18a}
+@media(max-width:700px){
+ #hud{grid-template-columns:minmax(43px,.75fr) minmax(43px,.75fr) minmax(0,1.5fr) 44px 44px;grid-template-rows:repeat(2,minmax(21px,auto));gap:3px}
+ #hud .chip{padding:1px 2px;font-size:11px;line-height:18px;overflow:visible;text-overflow:clip}
+ #hud #hCash{white-space:normal;overflow-wrap:anywhere;font-size:11px;line-height:14px;align-content:center}
+ #hud #evt{padding:3px}
+ #hud .ibtn{padding:0}
+}

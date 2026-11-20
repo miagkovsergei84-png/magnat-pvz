@@ -1,0 +1,28 @@
+/* Scenery stays behind the playable surface and has no input handling. */
+body[data-wallpaper]{background-color:#1b2934;background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed;
+  background-image:linear-gradient(var(--wallpaper-tint),var(--wallpaper-tint)),var(--wallpaper-art);
+  --wallpaper-tint:rgba(19,29,37,.2)}
+body[data-wallpaper] .branchScene{background-color:#1b2934;background-image:linear-gradient(var(--wallpaper-tint),var(--wallpaper-tint)),var(--wallpaper-art);background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed}
+body[data-wallpaper] #branchLabel,body[data-wallpaper] #hint,body[data-wallpaper] #networkTotals{background:rgba(18,29,40,.88);border-radius:7px;padding:3px 7px;color:#fff;text-shadow:0 1px 2px #000}
+body[data-wallpaper="village"]{--wallpaper-art:url('../assets/campaign/wallpaper-village.jpg')}
+body[data-wallpaper="town"]{--wallpaper-art:url('../assets/campaign/wallpaper-town.jpg')}
+body[data-wallpaper="city"]{--wallpaper-art:url('../assets/campaign/city-dialogue-20261111.jpg')}
+body[data-wallpaper="city-center"]{--wallpaper-art:url('../assets/campaign/metropolis-center-dialogue-20261111.jpg')}
+body[data-wallpaper="capital"]{--wallpaper-art:url('../assets/campaign/capital-outskirts-a-20261111.jpg')}
+body[data-wallpaper="capital"][data-wallpaper-district="center"]{--wallpaper-art:url('../assets/campaign/capital-center-a-20261111.jpg')}
+/* Each visible branch keeps its own district even when two scenes are on screen. */
+body[data-wallpaper="capital"] #scene1{--wallpaper-art:url('../assets/campaign/capital-outskirts-a-20261111.jpg')}
+body[data-wallpaper="capital"] #scene2{--wallpaper-art:url('../assets/campaign/capital-center-a-20261111.jpg')}
+body[data-wallpaper="village"][data-wallpaper-season="winter"]{--wallpaper-art:url('../assets/campaign/wallpaper-village-winter.jpg')}
+body[data-wallpaper="town"][data-wallpaper-season="winter"]{--wallpaper-art:url('../assets/campaign/wallpaper-town-winter.jpg')}
+body[data-wallpaper="city"][data-wallpaper-season="winter"]{--wallpaper-art:url('../assets/campaign/city-winter-20261111.jpg')}
+body[data-wallpaper="city-center"][data-wallpaper-season="winter"]{--wallpaper-art:url('../assets/campaign/metropolis-center-winter-20261111.jpg')}
+body[data-wallpaper="capital"][data-wallpaper-season="winter"]{--wallpaper-art:url('../assets/campaign/capital-outskirts-winter-20261111.jpg')}
+body[data-wallpaper="capital"][data-wallpaper-district="center"][data-wallpaper-season="winter"]{--wallpaper-art:url('../assets/campaign/capital-center-winter-20261111.jpg')}
+body[data-wallpaper="capital"] #branch1[data-wallpaper-season="winter"] #scene1{--wallpaper-art:url('../assets/campaign/capital-outskirts-winter-20261111.jpg')}
+body[data-wallpaper="capital"] #branch2[data-wallpaper-season="winter"] #scene2{--wallpaper-art:url('../assets/campaign/capital-center-winter-20261111.jpg')}
+body[data-wallpaper][data-wallpaper-light="warm"]{--wallpaper-tint:rgba(67,39,22,.15)}
+body[data-wallpaper][data-wallpaper-event="bf"],body[data-wallpaper][data-wallpaper-event="sale11"]{--wallpaper-tint:rgba(45,25,75,.23)}
+body[data-wallpaper][data-wallpaper-event="sept"]{--wallpaper-tint:rgba(130,75,17,.18)}
+body[data-wallpaper][data-wallpaper-event="chaos"]{--wallpaper-tint:rgba(37,44,64,.25)}
+body[data-wallpaper][data-wallpaper-event="ny"]{--wallpaper-tint:rgba(32,56,81,.12)}

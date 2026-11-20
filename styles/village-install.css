@@ -1,0 +1,32 @@
+#ov:has(.vInstall){position:fixed;inset:0;z-index:1000;display:block;padding:0;border-radius:0;background:#202921}
+#ov:has(.vInstall)>.card{width:100%;height:100%;max-width:none;max-height:none;overflow:auto;padding:0;border-radius:0;background:transparent}
+.vInstall{isolation:isolate;position:relative;display:grid;place-items:center;box-sizing:border-box;min-height:100%;padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));color:#fff6de;text-align:left;font-family:var(--body,system-ui,sans-serif);background:#232b25}
+.vInstall__backdrop{pointer-events:none;position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover}
+.vInstall::before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(100deg,#1e291be6,#212b25e5 48%,#161e1af5)}
+.vInstall__layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr);align-items:center;gap:clamp(24px,4vw,62px);max-width:1200px;width:100%;margin:auto}
+.vInstall__picture{position:relative;width:min(100%,calc((100dvh - 48px)*var(--frame-ratio)));aspect-ratio:var(--frame-ratio);justify-self:end;overflow:hidden;border:1px solid #a68e65;border-radius:8px;background:#353e31;box-shadow:0 14px 44px #11181077}
+.vInstall__picture canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.vInstall .vInstall__loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:85%;margin:0;text-align:center;color:#fff6de}
+.vInstall__loading button{display:block;margin:10px auto 0}
+.vInstall__picture canvas{opacity:0}
+.vInstall__picture canvas[data-ready]{opacity:1}
+.vInstall__detail{max-width:420px;min-width:0}
+.vInstall .vInstall__house{color:#f8daa0;margin:0 0 16px;font-weight:750;font-size:clamp(17px,2.5vw,26px)}
+.vInstall .vInstall__level{color:#d8ddc6;margin:0 0 7px;font-size:14px;line-height:1.3}
+.vInstall h2{color:#fff5df;margin:0;font-size:clamp(28px,3.5vw,46px);line-height:1.1;text-wrap:balance}
+.vInstall .vInstall__perk{margin:14px 0 24px;color:#f3f2e5;font-size:clamp(16px,2vw,20px);line-height:1.48}
+.vInstall button{width:100%;max-width:300px;min-height:48px}
+@media(max-width:650px) and (orientation:portrait){
+  .vInstall__layout{grid-template-columns:1fr;gap:16px;max-width:440px}
+  .vInstall__picture{width:min(100%,calc((100dvh - 240px)*var(--frame-ratio)));min-width:min(100%,180px);justify-self:center}
+  .vInstall__detail{max-width:none}
+  .vInstall .vInstall__house{margin-bottom:6px;font-size:17px}
+  .vInstall h2{font-size:clamp(24px,6.5vw,31px)}
+  .vInstall .vInstall__perk{margin:7px 0 14px;font-size:15px;line-height:1.4}
+  .vInstall button{max-width:none}
+}
+@media(orientation:landscape) and (max-height:480px){
+  .vInstall__picture{width:min(100%,calc((100dvh - 38px)*var(--frame-ratio)))}
+  .vInstall .vInstall__house{margin-bottom:6px}
+  .vInstall .vInstall__perk{margin:7px 0 12px;font-size:15px}
+}

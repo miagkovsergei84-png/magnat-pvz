@@ -1,0 +1,113 @@
+/* Story campaign components. Scoped so the existing game and legacy saves
+   keep their current presentation until the campaign screen is invoked. */
+.campaignScreen{color:#f5f7fb;max-width:660px;margin:0 auto;font-family:var(--body,system-ui,sans-serif)}
+.campaignScreen h2{font-size:clamp(21px,5vw,30px);line-height:1.15;margin:0 0 12px}
+.campaignScreen h3{font-size:17px;margin:16px 0 8px}
+.campaignScreen p{line-height:1.45}
+.campaignMapArt{overflow:hidden;border-radius:12px;border:2px solid #518caf;background:#293e4b}
+.campaignMapArt svg{display:block;width:100%;height:auto;aspect-ratio:16/9}
+.campaignRoute{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:6px;margin:12px 0 0;padding:0;list-style:none;text-align:left}
+.campaignRoute__step{display:flex;align-items:center;gap:6px;min-width:0;padding:7px;border-radius:9px;background:#26323d;border:1px solid #405361}
+.campaignRoute__step--current{border-color:#ffc364;background:#403927;box-shadow:0 0 0 1px #ffc364}
+.campaignRoute__step--done{border-color:#4da980;background:#203a33}
+.campaignRoute__step--locked{opacity:.76}
+.campaignRoute__number{width:25px;height:25px;flex:0 0 25px;display:grid;place-items:center;border-radius:50%;background:#4d6170;color:#fff;font-size:13px;font-weight:800}
+.campaignRoute__step--current .campaignRoute__number{background:#ffb13b;color:#171c22}
+.campaignRoute__step--done .campaignRoute__number{background:#54bd8b;color:#102b20}
+.campaignRoute__text{min-width:0;display:flex;flex-direction:column;gap:3px}
+.campaignRoute__text b{font-size:14px;line-height:1.2;overflow-wrap:normal;word-break:normal}
+.campaignRoute__text small{font-size:10px;line-height:1.2;color:#d5e0e8}
+.campaignGoals,.campaignChoice__list{display:grid;gap:7px;margin:0;padding:0;list-style:none;text-align:left}
+.campaignGoal{display:flex;gap:9px;align-items:flex-start;padding:10px;border-radius:9px;background:#28333d}
+.campaignGoal--done{background:#203a33}
+.campaignGoal__mark{font-weight:900;color:#ffca6c;font-size:18px;line-height:1.1}
+.campaignGoal--done .campaignGoal__mark{color:#75e6af}
+.campaignGoal__copy{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}
+.campaignGoal__copy b{font-size:14px;line-height:1.3}.campaignGoal__copy small{font-size:13px;color:#d2dfe8;line-height:1.3}
+.campaignActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.campaignButton{min-height:46px;flex:1 1 180px;border:0;border-radius:10px;padding:10px 14px;background:#ff9b2f;color:#191c20;font:800 15px var(--body,system-ui,sans-serif);cursor:pointer;line-height:1.2}
+.campaignButton--secondary{background:#3b4b58;color:#fff}.campaignButton--choice{width:100%;text-align:left;background:#2d4d61;color:#fff;border:1px solid #6caac8}
+.campaignButton:focus-visible{outline:3px solid #fff;outline-offset:2px}
+[data-guide-highlight="true"]{outline:3px solid #62e7ff!important;outline-offset:2px;animation:journeyGuidePulse 1.2s ease-in-out infinite}
+@keyframes journeyGuidePulse{0%,100%{outline-color:#62e7ff;box-shadow:0 0 0 1px #69d7ff80}50%{outline-color:#e5fbff;box-shadow:0 0 15px 4px #45d9ffae}}
+.journeyGuideSticky{position:sticky;bottom:-18px;z-index:2;display:flex;flex-direction:column;gap:8px;background:#1f242af7;padding:8px 2px 12px;box-shadow:0 -5px 12px #10171c66}
+.campaignActions.journeyGuideSticky{align-items:stretch;margin-top:14px}
+.campaignActions.journeyGuideSticky .campaignButton{flex:0 0 auto;width:100%}
+.journeyGuideTeam{display:flex;flex-direction:column;gap:5px}
+.journeyGuideTeam .guidePanel{padding:7px;gap:4px}
+.journeyGuideTeam .guideNarratorPortrait{width:34px;height:34px}
+.journeyGuideTeam .guidePanel p{font-size:13px;line-height:1.3}
+.journeyGuideTeam .scard{gap:3px;padding:6px}
+.campaignChoice__list{margin-top:14px}.campaignChoice__empty{padding:10px;border-radius:8px;background:#28333d}
+/* Story scenes intentionally cover the device rather than being squeezed into
+   the game board. All controls are real buttons and respect safe areas. */
+#ov:has(.campaignDialogue){position:fixed;inset:0;z-index:1000;display:flex;padding:0;border-radius:0;background:#142433}
+#ov:has(.campaignDialogue)>.card{width:100%;height:100%;max-width:none;max-height:none;display:block;padding:0;border-radius:0;overflow:auto;background:#142433}
+.campaignDialogue{width:100%;max-width:none;min-height:100%;height:100%;display:flex;flex-direction:column;margin:0;overflow:hidden}
+.campaignDialogue__scene{--portrait-slot-height:min(80vw,calc(88% - 20px),400px);flex:1 1 auto;min-height:180px;position:relative;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;border-radius:0;background:linear-gradient(145deg,#37566a,#1c2d39)}
+.campaignDialogue__scene--village{background:#37566a url('../assets/campaign/village-dialogue.jpg') center/cover no-repeat}
+.campaignDialogue__scene--owned{background:#384b3a}
+.campaignDialogue__house{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.campaignDialogue__scene--town{background:#37566a url('../assets/campaign/town-dialogue.jpg') center/cover no-repeat}
+.campaignDialogue__scene--city{background:#37566a url('../assets/campaign/city-dialogue-20261111.jpg') center/cover no-repeat}
+.campaignDialogue__scene--city-center{background:#37566a url('../assets/campaign/metropolis-center-dialogue-20261111.jpg') center/cover no-repeat}
+body[data-wallpaper-season="winter"] .campaignDialogue__scene--city-center{background-image:url('../assets/campaign/metropolis-center-winter-20261111.jpg')}
+.campaignDialogue__scene--capital{background:#37566a var(--wallpaper-art,url('../assets/campaign/capital-outskirts-a-20261111.jpg')) center/cover no-repeat}
+.campaignDialogue__portrait{position:absolute;left:50%;bottom:0;height:var(--portrait-slot-height);max-width:none;width:auto;object-fit:contain;object-position:center bottom;transform-origin:center bottom;transform:translateX(calc(-50% + var(--portrait-offset,0%))) translateY(var(--portrait-bottom,0%)) scale(var(--portrait-scale,1));filter:drop-shadow(0 7px 8px #13243370)}
+.campaignDialogue__scene--owned .campaignDialogue__portrait{left:41%;--portrait-slot-height:min(64vw,calc(84% - 20px),400px)}
+@media(min-aspect-ratio:6/5){.campaignDialogue__scene--owned .campaignDialogue__portrait{left:30%}}
+/* Each illustration has different transparent margins. Equalise the visible
+   head-to-waist height and baseline, not the image canvas, without stretching
+   arms or faces. Offsets centre the visible artwork rather than transparent pixels. */
+.campaignDialogue__portrait--anna{--portrait-scale:1.12564;--portrait-offset:3.28%}
+.campaignDialogue__portrait--eli,.campaignDialogue__portrait--maya{--portrait-scale:1.12564}
+.campaignDialogue__portrait--playerCasual{--portrait-scale:1.01386;--portrait-offset:.32%}
+.campaignDialogue__portrait--playerUniform{--portrait-scale:1.00920;--portrait-offset:-1.16%}
+.campaignDialogue__portrait--leo{--portrait-scale:1.03538;--portrait-offset:-5.40%;--portrait-bottom:1.89%}
+.campaignDialogue__portrait--narrator{--portrait-scale:1.02570;--portrait-offset:-.54%;--portrait-bottom:1.40%}
+.campaignDialogue__portrait--nika{--portrait-scale:1.03950;--portrait-offset:-6.28%}
+.campaignDialogue__portrait--cityBlogger{--portrait-scale:1.04280;--portrait-offset:.51%;--portrait-bottom:3.49%}
+/* A character shown from a full-body game sprite is framed like the portraits
+   above: the top 70% of the sprite (head to waist) at the height of a painted
+   portrait, never the whole figure and never an oversized close-up. */
+.campaignDialogue__portrait--player{width:auto;height:var(--portrait-slot-height);aspect-ratio:1024/1075;object-fit:cover;object-position:top center}
+.campaignDialogue__tools{position:absolute;z-index:3;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));display:flex;gap:8px}
+.campaignDialogue__tool{min-width:44px;min-height:44px;padding:8px;border:2px solid #9bd8ee;border-radius:12px;background:#143a5ce8;color:#fff;font:900 14px var(--body,system-ui,sans-serif);box-shadow:0 3px 0 #0b1f35;cursor:pointer}
+.campaignDialogue__box{flex:0 0 min(55%,clamp(260px,calc(380px - 25vw),300px));box-sizing:border-box;position:relative;min-height:0;display:flex;flex-direction:column;padding:clamp(12px,1.5vh,18px) max(18px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));border:3px solid #ffb13b;border-radius:18px 18px 0 0;background:#172a3df5;box-shadow:0 -5px 18px #09121d66}
+.campaignDialogue__speaker{flex:none;display:inline-block;color:#a1e9ff;font:900 clamp(18px,calc(1vw + 1.55vh),28px)/1.2 var(--body,system-ui,sans-serif);letter-spacing:.01em}
+.campaignDialogue .campaignDialogue__text{white-space:pre-line;min-height:2.7em;max-width:75ch;overflow-y:auto;overscroll-behavior:contain;font:700 clamp(18px,calc(1.05vw + 1.7vh),30px)/1.38 var(--body,system-ui,sans-serif);letter-spacing:.005em;color:#fff;margin:8px 0 12px}
+.campaignDialogue__actions{flex:none;display:flex;justify-content:flex-end;margin-top:auto;padding-bottom:4px}
+.campaignDialogue .campaignButton--next{flex:0 0 auto;position:relative;min-width:120px;width:auto;min-height:48px;padding:10px 30px 10px 18px;border:2px solid #ffd771;border-radius:14px;background:linear-gradient(#ffc94d,#f18413);color:#34200c;box-shadow:0 5px 0 #9e4800,0 7px 10px #07131e66;font:900 16px var(--body,system-ui,sans-serif);transition:transform .08s,box-shadow .08s}
+.campaignDialogue .campaignButton--next::after{content:'›';position:absolute;right:10px;top:50%;transform:translateY(-53%);font-size:24px;line-height:1}
+.campaignDialogue .campaignButton--next:active{transform:translateY(4px);box-shadow:0 1px 0 #9e4800,0 3px 5px #07131e66}
+.campaignDialogue__tool:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.campaignDialogue .storyQueue,.campaignDialogue .storyHelper{height:auto;border:0;border-radius:0;background:#37566a url('../assets/campaign/village-dialogue.jpg') center/cover no-repeat}
+.campaignDialogue .storyQueuePeople{position:absolute;inset:auto 2% 0 2%;height:65%;display:flex;justify-content:center;align-items:flex-end;animation:none;opacity:1;transform:none}
+.campaignDialogue .storyQueueCrowd{display:block;width:min(100%,1000px);height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 4px 6px #10203077)}
+.campaignDialogue .storyNarrator{position:absolute;top:17%;right:2%;z-index:2;max-width:18%;height:22%;object-fit:contain;object-position:top right;filter:drop-shadow(0 4px 6px #10203099)}
+/* Maya's introduction uses the same waist-up portrait framing as her later dialogue. */
+.campaignDialogue .storyHelperPortrait{position:absolute;inset:0;overflow:hidden}
+.campaignDialogue .storyHelperPortrait picture{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
+.campaignDialogue .storyHelperPortrait img{display:block;position:absolute;left:50%;bottom:0;width:auto;height:var(--portrait-slot-height);max-width:none;object-fit:contain;object-position:center bottom;transform-origin:center bottom;transform:translateX(-50%) scale(1.12564);filter:drop-shadow(0 7px 8px #13243370)}
+@media(max-height:520px) and (orientation:landscape){.campaignDialogue__scene{min-height:130px}.campaignDialogue__box{flex-basis:58%;padding-top:9px;padding-bottom:9px}.campaignDialogue .campaignDialogue__text{min-height:2em;margin:4px 0 6px;font-size:16px}.campaignDialogue .campaignButton--next{min-height:44px}}
+.campaignSrOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:430px){.campaignRoute{grid-template-columns:1fr}.campaignRoute__text b{font-size:14px}.campaignRoute__text small{font-size:11px}.campaignActions .campaignButton{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){.campaignScreen *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.postgameStatus{margin:0 0 10px;padding:9px 10px;border-radius:9px;background:#28333d;font-size:14px;line-height:1.45}
+.postgameStatus small{color:#d2dfe8}
+.postgamePlaces .campaignButton--choice{display:flex;flex-direction:column;gap:4px}
+.postgamePlaces .campaignButton--choice small{font-weight:600;font-size:13px;color:#d2dfe8}
+.postgamePlaces .campaignButton:disabled{opacity:.55;cursor:default}
+.postgameLevels{display:flex;flex-wrap:wrap;gap:8px}
+.postgameLevels .campaignButton{flex:1 1 96px;min-height:44px}
+.postgameLevels .campaignButton[aria-pressed="true"]{outline:2px solid #fff;outline-offset:1px}
+.postgame .postgameNote{font-size:13px;color:#d2dfe8;margin:10px 0 0}
+.postgame .postgameNote--bad{color:#ffb3b3}
+.postgame h3{margin:12px 0 6px}
+.postgame .rows{margin-top:12px}
+.postgame .tag{margin:0 0 4px}
+.postgameMap{display:block;width:100%;height:auto;max-height:clamp(110px,25vh,270px);object-fit:contain;margin:0 auto 10px;background:#202b36;border-radius:8px}
+.postgameBack{align-self:flex-start;min-height:44px;margin:0 0 4px;padding:4px;background:none;border:0;color:#a5e3ff;font:800 14px var(--body,system-ui,sans-serif);cursor:pointer}
+#networkBar #bAwayGoals{min-height:44px;padding:4px 10px;color:#ffdc8e}
+.postgameGoal--missed .campaignGoal__mark{color:#ffacaa}
+@media(min-width:540px){.postgamePlaces{grid-template-columns:repeat(2,minmax(0,1fr))}.postgamePlaces button{height:100%}}

@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "path": "assets/fonts/OFL-Bungee.txt",
+      "reason": "Redistribution notice required with the bundled Bungee font files under SIL OFL 1.1."
+    },
+    {
+      "path": "assets/fonts/OFL-Nunito.txt",
+      "reason": "Redistribution notice required with the bundled Nunito font files under SIL OFL 1.1."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+/* Each completed campaign objective fills one equal share of the button. */
+.campaignGoalButton{position:relative;isolation:isolate;overflow:hidden;border:2px solid #56636f;color:#fff}
+.campaignGoalButton__fill{position:absolute;z-index:-1;inset:auto 0 0;height:var(--goal-fill,0%);background:#218853;transition:height .35s ease}
+.campaignGoalButton__label{position:relative;color:#fff;text-shadow:0 1px 2px #142b20}
+.campaignGoalButton--ready{border-color:#5bd6ff;background:#218853;animation:campaignGoalReady 1.5s ease-in-out infinite}
+@keyframes campaignGoalReady{0%,100%{background-color:#218853;box-shadow:0 0 0 1px #5bd6ff80}50%{background-color:#299b7b;box-shadow:0 0 0 4px #5bd6ff9c,0 0 15px #5bd6ff80}}
+
+/* Completed goals pulse without hiding text or changing their layout. The
+   separate ring stays non-interactive and contracts/expands around the goal. */
+.campaignGoal--done,.goal.ok,#hGoal.goal--reached{position:relative;isolation:isolate;animation:goalCompletedBlink 1.5s ease-in-out infinite}
+.campaignGoal--done::after,.goal.ok::after,#hGoal.goal--reached::after,.campaignGoalButton--progress::after,.campaignGoalButton--ready::after{
+  content:"";position:absolute;inset:0;border:2px solid #5bd6ff;border-radius:inherit;pointer-events:none;box-sizing:border-box;
+  animation:goalCompletedFrame 1.5s ease-in-out infinite;
+}
+#hGoal.goal--reached::after,.campaignGoalButton--progress::after,.campaignGoalButton--ready::after{inset:2px}
+@keyframes goalCompletedBlink{0%,100%{background-color:#203a33}50%{background-color:#27605d}}
+@keyframes goalCompletedFrame{0%,100%{opacity:.12;transform:scale(.985);box-shadow:0 0 0 0 #5bd6ff33}45%,55%{opacity:1;transform:scale(1.015);box-shadow:0 0 9px 2px #5bd6ffdd}}
+
+/* A free staff slot and an affordable candidate make the team button useful. */
+.hireAvailable{position:relative;isolation:isolate}
+.hireAvailable::after{content:"";position:absolute;inset:1px;border:3px solid #ffe379;border-radius:inherit;pointer-events:none;animation:hireAvailableFrame 1.25s ease-in-out infinite}
+@keyframes hireAvailableFrame{0%,100%{opacity:.15;box-shadow:0 0 0 0 #ffce32}50%{opacity:1;box-shadow:0 0 0 2px #ffce3299,0 0 14px #ffd95dcc}}
+@media(prefers-reduced-motion:reduce){
+  .campaignGoalButton__fill{transition:none}
+  .campaignGoalButton--ready{animation:none;box-shadow:0 0 0 2px #5bd6ff}
+  .campaignGoal--done::after,.goal.ok::after,#hGoal.goal--reached::after,.campaignGoalButton--progress::after,.campaignGoalButton--ready::after,.hireAvailable::after{animation:none;opacity:1;transform:none}
+}
