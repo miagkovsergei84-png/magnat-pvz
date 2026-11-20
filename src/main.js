@@ -1784,13 +1784,15 @@ window.addEventListener('blur',()=>{audioBlurred=true;syncAudio();});
 window.addEventListener('focus',()=>{audioBlurred=false;syncAudio();});
 window.addEventListener('pagehide',()=>{audioPageGone=true;syncAudio();});
 window.addEventListener('pageshow',()=>{audioPageGone=false;syncAudio();});
+// Player support channel required by the VK Games catalogue (owner's choice, 20.11.2026).
+const SUPPORT_URL='https://vk.com/club243516179';
 function showSoundSettings(){
   if(settingsOpen||loadFailed||externallyPaused())return;
   soundReturn={fn:ovFn,summary:contractFxSummary,hidden:ov.hidden,scroll:ov.querySelector('.card')?.scrollTop||0};
   settingsOpen=true;uiCue('tick');
   showOv(()=>{const prefs=playerAudio?.snapshot().preferences||{sfxMuted:false,sfxVolume:.55,musicMuted:false,musicVolume:.3};
     const music=musicDirector?'<button class="btn sec" data-a="musicMute" aria-pressed="'+prefs.musicMuted+'">'+t(prefs.musicMuted?'musicOff':'musicOn')+'</button><label class="soundVolume" for="musicVolume">'+t('musicVolume')+' <output id="musicLevel">'+Math.round(prefs.musicVolume*100)+'%</output></label><input id="musicVolume" type="range" min="0" max="100" step="1" value="'+Math.round(prefs.musicVolume*100)+'">':'';
-    return '<h2>'+t('soundSettings')+'</h2><button class="btn sec" data-a="sfxMute" aria-pressed="'+prefs.sfxMuted+'">'+t(prefs.sfxMuted?'soundOff':'soundOn')+'</button><label class="soundVolume" for="sfxVolume">'+t('soundVolume')+' <output id="sfxLevel">'+Math.round(prefs.sfxVolume*100)+'%</output></label><input id="sfxVolume" type="range" min="0" max="100" step="1" value="'+Math.round(prefs.sfxVolume*100)+'">'+music+'<button class="btn" data-a="audioClose">'+t('soundBack')+'</button>';});
+    return '<h2>'+t('soundSettings')+'</h2><button class="btn sec" data-a="sfxMute" aria-pressed="'+prefs.sfxMuted+'">'+t(prefs.sfxMuted?'soundOff':'soundOn')+'</button><label class="soundVolume" for="sfxVolume">'+t('soundVolume')+' <output id="sfxLevel">'+Math.round(prefs.sfxVolume*100)+'%</output></label><input id="sfxVolume" type="range" min="0" max="100" step="1" value="'+Math.round(prefs.sfxVolume*100)+'">'+music+'<div class="soundActions"><a class="btn sec supportLink" href="'+SUPPORT_URL+'" target="_blank" rel="noopener noreferrer" title="'+t('supportTitle')+'">'+t('support')+'</a><button class="btn" data-a="audioClose">'+t('soundBack')+'</button></div>';});
 }
 $('bSound').addEventListener('click',showSoundSettings);
 const dialoguePrinter=PptCampaignUI.createTypewriter();
@@ -2251,7 +2253,7 @@ function showCampaignMap(){
     {label:ru?'Обслужить клиентов':'Serve customers',progress:checks.served.current+'/'+checks.served.target,done:checks.served.met},
     {label:ru?'Удержать рейтинг не ниже ★'+checks.rating.minimum:'Maintain rating at least ★'+checks.rating.minimum,progress:(checks.rating.current===null?'—':'★'+displayedRating(checks.rating.current))+' · '+checks.rating.streak+'/'+checks.rating.target+(ru?' смен подряд':' consecutive shifts'),done:checks.rating.met},
     {label:checks.staff.kind==='new_hire'?(ru?'Нанять нового сотрудника':'Hire a new employee'):(ru?'Подготовить сотрудника':'Have an employee ready'),progress:checks.staff.current+'/'+checks.staff.target,done:checks.staff.met},
-    {label:checks.house?(ru?'Взнос за помещение в райцентре $500 и запас на зарплату и работу':'Town property deposit ($500) and operating reserve'):checks.cash.kind==='town_revenue'?(ru?'Выручка городка (выдача и возвраты)':'Town revenue (pickups & returns)'):(ru?'Накопить в кассе':'Cash reserve'),progress:money(checks.cash.current)+' / '+money(checks.cash.target),done:checks.cash.met}
+    {label:checks.house?(ru?'Взнос за помещение в райцентре $500 и запас на зарплату и работу':'Premises deposit in the district centre ($500) and operating reserve'):checks.cash.kind==='town_revenue'?(ru?'Выручка городка (выдача и возвраты)':'Town revenue (pickups & returns)'):(ru?'Накопить в кассе':'Cash reserve'),progress:money(checks.cash.current)+' / '+money(checks.cash.target),done:checks.cash.met}
   ];
   if(checks.house){
     objectives.push({label:ru?'Купить дом и закончить пять ремонтов':'Buy a house and finish five renovations',progress:checks.house.current+'/5',done:checks.house.met},
