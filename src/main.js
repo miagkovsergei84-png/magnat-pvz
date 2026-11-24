@@ -78,12 +78,17 @@ function commitContractFx(){
   queueContractFx();
 }
 let langChosen=false;try{const l=localStorage.getItem(LKEY);if(l==='ru'||l==='en'){lang=l;langChosen=true;}}catch(e){}
+// Inside VK the language of the VK interface is the default until the player picks one.
+if(!langChosen){const vkLang=globalThis.PptVkRuntime?.language;if(vkLang==='ru'||vkLang==='en')lang=vkLang;}
+// vkRuntime is null outside the VK package. savesLocked: a save from VK is
+// being put in place and the page is about to reload; nothing may overwrite it.
+let vkRuntime=null,savesLocked=false;
 function save(){
   if(globalThis.PptDebugSession?.covered)return true;
-  if(loadFailed||!NETWORK||!branchRuntime)return false;
+  if(savesLocked||loadFailed||!NETWORK||!branchRuntime)return false;
   if(NETWORK.away)return true;
   branchRuntime.capture();
-  try{PptSave.writeNetwork(campaignStorage(),NETWORK);hasSave=true;$('saveNotice').hidden=true;commitContractFx();return true;}
+  try{PptSave.writeNetwork(campaignStorage(),NETWORK);hasSave=true;$('saveNotice').hidden=true;commitContractFx();try{vkRuntime?.noteSave();}catch{}return true;}
   catch(e){console.error('Save failed:',e);if(e.saveUncertain){loadFailed=true;showStorageError();}saveNoticeKey=e.saveUncertain?'cancelExpansionUncertain':'saveFailed';$('saveNotice').textContent=t(saveNoticeKey);$('saveNotice').hidden=false;return false;}
 }
 // Equipment bought in older saves is retained. A live robot may finish its
@@ -2144,6 +2149,9 @@ function actCore(a,v){
       return campaignCommit(candidate=>{candidate.villageHome.radio=choice;});
     }});
   }
+  else if(a==='vkAd'){confirmVkAd();}
+  else if(a==='vkAdNo'){if(mode==='summary')showSummary();}
+  else if(a==='vkAdGo'){if(mode==='summary'){showSummary();showVkAd();}}
   else if(a==='card'){S.card=v;save();showBrief();}
   else if(a==='ctr'){startCtr(v);showBrief();}
   else if(a==='shop'){if(!firstDayLocked()){
@@ -3281,12 +3289,41 @@ function showSummary(){if(NETWORK.away){showAwaySummary();return;}if(!journeyNor
   (d.wages?line2(t('wages'),'−'+money(d.wages),'neg'):'')+
   (d.instalment?line2(lang==='ru'?'Взнос за дом':'House instalment','−'+money(d.instalment),'neg'):'')+
   (d.debt?line2(lang==='ru'?'Остаток рассрочки':'Remaining house debt',money(d.debt)):'')+
-  '<span class="tot">'+t('net')+'</span><span class="v tot '+(d.net<0?'neg':'pos')+'">'+money(d.net)+'</span>'+line2(t('cash'),money(S.cash))+'<span>'+t('rating')+'</span><span class="v" style="color:var(--gold)">★'+displayedRating(d.rating??stars())+'</span></div>'+(d.lowWarn?'<div class="lvup" style="color:var(--bad)">'+t('lowWarn')+'</div>':'')+(d.ctrMsg?'<div class="lvup" style="color:var(--accent)">'+contractResultText(d.ctrMsg)+'</div>':'')+(d.lvUps.length?'<div class="lvup">'+d.lvUps.map(x=>typeof x==='string'?esc(x):t('lvUp',NAMES[lang][x.n],x.lvl)).join('<br>')+'</div>':'')+'</div>'+(firstDayLocked()?'<button class="btn" data-a="firstDayNext">'+(lang==='ru'?'Далее':'Next')+'</button>':journeySummaryActions());},sumData);}
+  '<span class="tot">'+t('net')+'</span><span class="v tot '+(d.net<0?'neg':'pos')+'">'+money(d.net)+'</span>'+(d.adReward?line2(lang==='ru'?'Бонус за рекламу':'Ad bonus','+'+money(d.adReward),'pos'):'')+line2(t('cash'),money(S.cash))+'<span>'+t('rating')+'</span><span class="v" style="color:var(--gold)">★'+displayedRating(d.rating??stars())+'</span></div>'+(d.lowWarn?'<div class="lvup" style="color:var(--bad)">'+t('lowWarn')+'</div>':'')+(d.ctrMsg?'<div class="lvup" style="color:var(--accent)">'+contractResultText(d.ctrMsg)+'</div>':'')+(d.lvUps.length?'<div class="lvup">'+d.lvUps.map(x=>typeof x==='string'?esc(x):t('lvUp',NAMES[lang][x.n],x.lvl)).join('<br>')+'</div>':'')+'</div>'+(firstDayLocked()?'<button class="btn" data-a="firstDayNext">'+(lang==='ru'?'Далее':'Next')+'</button>':journeySummaryActions());},sumData);}
 function journeySummaryActions(){
   const stage=NETWORK?.journeyGuide,ru=lang==='ru',map=campaignMapButton(),shop='<button class="btn" data-a="shop">'+t('toShop')+'</button>';
   if(stage==='map')return '<div class="journeyGuideSticky">'+journeyPanel(ru?'Посмотрим, что нужно сделать для переезда. Открой карту и цели.':'Let’s see what it takes to move on. Open the map and goals.')+journeyHighlight(map,'campaignMap')+'</div>';
   if(stage==='shop')return '<div class="journeyGuideSticky">'+journeyPanel(ru?'Теперь найдём помощника для разгрузки. Открой магазин.':'Now let’s find someone to unload deliveries. Open the shop.')+journeyHighlight(shop,'shop')+'</div>';
-  return '<div class="summaryActions">'+villageWorkButton()+cityCourierButton()+map+shop+'</div>';
+  return vkAdButton()+'<div class="summaryActions">'+villageWorkButton()+cityCourierButton()+map+shop+'</div>';
+}
+// VK rewarded advert: one per shift summary, only on the player's press. The
+// bonus is a share of the shift's revenue and is written into the summary,
+// so a reload or a second press can never pay it twice.
+const AD_REWARD_SHARE=.2,AD_REWARD_MIN=20;
+const adRewardAmount=summary=>Math.max(AD_REWARD_MIN,Math.round((summary?.st?.revenue||0)*AD_REWARD_SHARE/5)*5);
+function vkAdButton(){
+  if(!vkRuntime||NETWORK?.away||NETWORK?.storyPresentation||journeyGuideActive()||!sumData||sumData.adReward!==undefined||firstDayLocked())return '';
+  const state=vkRuntime.adState(),ru=lang==='ru';
+  if(state==='showing')return '<button class="btn sec vkAd" disabled>'+(ru?'Реклама загружается…':'Loading the ad…')+'</button>';
+  if(state!=='ready')return '';
+  return '<button class="btn sec vkAd" data-a="vkAd">'+(ru?'▶ Смотреть рекламу: +':'▶ Watch an ad: +')+money(adRewardAmount(sumData))+'</button>';
+}
+// VK: the player presses the button and then agrees, seeing the bonus by name.
+function confirmVkAd(){
+  if(!vkRuntime||mode!=='summary'||!sumData||sumData.adReward!==undefined||vkRuntime.adState()!=='ready')return;
+  const amount=money(adRewardAmount(sumData));
+  showOv(()=>'<h2>'+(lang==='ru'?'Посмотреть рекламу?':'Watch an ad?')+'</h2><p>'+(lang==='ru'?'За просмотр рекламы вы получите '+amount+' в кассу.':'You get '+amount+' for watching an ad.')+'</p><button class="btn" data-a="vkAdGo">'+(lang==='ru'?'Смотреть':'Watch')+'</button><button class="btn sec" data-a="vkAdNo">'+(lang==='ru'?'Не сейчас':'Not now')+'</button>');
+}
+function showVkAd(){
+  const summary=sumData,state=S;
+  if(!vkRuntime||mode!=='summary'||!summary||summary.adReward!==undefined||vkRuntime.adState()!=='ready')return;
+  const amount=adRewardAmount(summary);
+  vkRuntime.showRewardAd().then(shown=>{
+    if(!shown||loadFailed||summary.adReward!==undefined)return;
+    summary.adReward=amount;state.cash+=amount;
+    save();uiCue('shift');
+  }).finally(()=>{if(mode==='summary'&&!menuOpen&&!ov.hidden)rerenderOv();else syncHud();});
+  rerenderOv();
 }
 const saleOn=(state=S,network=NETWORK)=>state.saleDay&&state.saleDay===calendarDay(state,network)-1;
 const priceOf=(it,l,state=S,network=NETWORK)=>Math.round(it.p[l]*(saleOn(state,network)?.75:1));
@@ -3866,6 +3903,27 @@ globalThis.PptDebugSession?.connect({
 window.addEventListener('pagehide',()=>{if(hasSave&&!loadFailed)save();});
 document.addEventListener('visibilitychange',syncVisibilityPause);
 syncVisibilityPause();
+// VK package only (connect returns null elsewhere). The VK mobile client can
+// hide the game without a browser visibility change; its hold, like the one of
+// a rewarded advert, goes through the same external pause gate. The VK copy of
+// the save replaces this device's save only after the player chooses it.
+vkRuntime=globalThis.PptVkRuntime?.connect({
+  hold(reason){resetFrameClock=true;const release=externalPause.acquire(reason);syncHud();return()=>{resetFrameClock=true;const removed=release();syncHud();return removed;};},
+  save(){if(hasSave&&!loadFailed)save();},
+  isMenuOpen:()=>menuOpen,
+  lang:()=>lang,
+  readSave(){try{return campaignStorage().getItem(PptSave.networkKey);}catch{return null;}},
+  writeSave(raw){
+    let storage=null,previous=null;
+    try{storage=campaignStorage();previous=storage.getItem(PptSave.networkKey);storage.setItem(PptSave.networkKey,raw);if(storage.getItem(PptSave.networkKey)===raw)return true;}catch{}
+    try{if(storage){if(previous===null)storage.removeItem(PptSave.networkKey);else storage.setItem(PptSave.networkKey,previous);}}catch{}
+    return false;
+  },
+  lockSaves(){savesLocked=true;},
+  unlockSaves(){savesLocked=false;},
+  reload(){location.reload();},
+  changed(){if(mode==='summary'&&!menuOpen&&!ov.hidden&&ovFn)rerenderOv();}
+})||null;
 // Start immediately when the host permits autoplay; otherwise the existing
 // trusted pointer/keyboard unlock starts it on the first interaction.
 syncAudio();
