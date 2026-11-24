@@ -8,7 +8,9 @@ globalThis.PptMusicDirector=(()=>{
     shift:{file:'assets/audio/music/shift.ogg',bpm:118,bars:16},
     rush:{file:'assets/audio/music/rush.ogg',bpm:136,bars:8},
     pause:{file:'assets/audio/music/pause.ogg',bpm:80,bars:8},
-    search:{file:'assets/audio/music/search.ogg',bpm:72,bars:12},
+    // Mini-games (set B, 24.11.2026): hidden objects in the village house and the sorting center (match three).
+    house:{file:'assets/audio/music/house.ogg',bpm:84,bars:16},
+    sorting:{file:'assets/audio/music/sorting.ogg',bpm:100,bars:24},
     granny:{file:'assets/audio/music/granny.ogg',sting:true,cooldown:90000},
     blogger:{file:'assets/audio/music/blogger.ogg',sting:true,cooldown:8000},
     ny:{file:'assets/audio/music/ny.ogg',layer:true},

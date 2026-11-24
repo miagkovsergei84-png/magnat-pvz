@@ -49,10 +49,10 @@ globalThis.PptCharacters = (() => {
     front:[[89,26,103,211],[308,2,104,235],[523,11,120,226]],
     rear:[[88,261,103,214],[306,240,105,235],[523,248,120,227]]};
   const VILLAGE_VISITORS={file:'assets/campaign/visitors-village-20261111.webp',width:720,height:480,
-    front:[[57,5,95,231],[223,12,94,225],[394,3,102,234],[572,11,87,226]],
-    rear:[[57,244,96,234],[223,251,94,227],[393,243,103,235],[571,251,89,227]]};
+    front:[[52,5,104,231],[214,12,112,225],[394,3,102,234],[564,11,102,226]],
+    rear:[[54,244,100,234],[214,251,112,227],[393,243,103,235],[563,251,105,227]]};
   const VILLAGE_ELDER={file:'assets/campaign/visitors-village-elder-20261111.webp',width:720,height:360,
-    front:[[128,8,134,341]],rear:[[457,8,134,341]]};
+    front:[[118,8,153,341]],rear:[[448,8,153,341]]};
   // The photo-based couple is one customer and one drawable in both views.
   const VILLAGE_ELDER_COUPLE={file:'assets/campaign/village-photo-elder-couple-walk-20261112.webp',width:1024,height:512,
     front:[[56,8,157,238]],rear:[[54,261,161,240]]};

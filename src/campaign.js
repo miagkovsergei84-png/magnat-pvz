@@ -186,7 +186,6 @@ globalThis.PptCampaign = (() => {
         const progress=campaign.cityProgress;
         const checks={
           centerShifts:{current:progress.centerShifts,target:CITY_CENTER_SHIFTS,met:progress.centerShifts>=CITY_CENTER_SHIFTS},
-          lockerPickup:{current:progress.lockerPickupSeen?1:0,target:CITY_CENTER_LOCKER_PICKUPS,met:progress.lockerPickupSeen},
           staff:{current:staff.length,target:1,met:staff.length>=1}
         };
         return {checks,ready:campaign.status==='active'&&progress.centerIntroSeen&&progress.aiIntroduced===true&&aiLevel>0&&

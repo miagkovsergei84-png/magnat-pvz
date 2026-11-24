@@ -1,14 +1,14 @@
 {
-  "release": "20261120T050947Z",
-  "createdAt": "2026-11-20T05:10:01.946Z",
+  "release": "20261124T123452Z",
+  "createdAt": "2026-11-24T13:07:03.651Z",
   "vkBridge": {
     "version": "3.0.2",
     "file": "vendor/vk-bridge-3.0.2/browser.min.js",
     "sha256": "827ba6f457cd9e73519b58b2c66564caf138645202f1bba37dca0b567f601bb4"
   },
-  "indexHtmlSha256": "cd9e9cd2c9a634edae79e6aaa4fce8d3ee4060745ea74c8456df79b7cd76fab8",
+  "indexHtmlSha256": "38a09fa0617a413067c4a92139c1b74c319df21f86323e5440bc52f200885b1d",
   "totals": {
-    "files": 356,
-    "bytes": 94980181
+    "files": 552,
+    "bytes": 106151976
   }
 }

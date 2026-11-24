@@ -10,6 +10,19 @@ globalThis.PptVillagePerks=(()=>{
     return Math.round(base*(has(home,4,'garden')&&weather(day,event)==='sun'?.8:1));
   }
   function gardenSales(home,random=Math.random){return has(home,5,'garden')?5+Math.floor(random()*11):0;}
+  // A style set: every repair in a style the house already has adds SET_BONUS
+  // to the cash at the end of each owned shift. Two cosy and three barn
+  // repairs count as 1+2 extra pieces.
+  const SET_BONUS=5;
+  function setCounts(choices){
+    const counts={};
+    for(const id of Array.from(choices||[]))counts[id]=(counts[id]||0)+1;
+    return counts;
+  }
+  function setPieces(home){
+    return Object.values(setCounts(home?.choices)).reduce((sum,n)=>sum+Math.max(0,n-1),0);
+  }
+  function setBonus(home){return SET_BONUS*setPieces(home);}
   function rating(home,day,event){return has(home,1,'garden')&&weather(day,event)==='rain'?.2:0;}
   const slots={
     pallet:{level:1,style:'diy',capacity:1,xy:[105,454],name:['Поддон','Pallet']},
@@ -223,6 +236,6 @@ globalThis.PptVillagePerks=(()=>{
     return '<h2>'+label('Свой дом','Your pickup point')+'</h2><p>'+label('Сегодня','Today')+' · '+(en?enWeather:ruWeather)[g.houseWeather]+'</p>'+buttons.join('')+
       '<button type="button" class="btn" data-a="houseToolsClose">'+label('Вернуться в смену','Return to shift')+'</button>';
   }
-  return {style,has,weather,upkeep,gardenSales,rating,slots,boxes,eachStored,findStored,store,remove,storageTop,moveStorage,validateStorage,shelfSource,begin,grace,patienceLoss,
+  return {style,has,weather,upkeep,gardenSales,SET_BONUS,setCounts,setPieces,setBonus,rating,slots,boxes,eachStored,findStored,store,remove,storageTop,moveStorage,validateStorage,shelfSource,begin,grace,patienceLoss,
     familyBonus,radioPatience,routeSpeed,extraPay,neighborReturn,hoist,callPrime,selectTruck,wetCells,floorWaypoint,toolAt,toolsMenu};
 })();

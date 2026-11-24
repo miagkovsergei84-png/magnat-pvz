@@ -15,6 +15,7 @@ function cfgFor(d){
 function dayConfig(day,ev,card,state,tuning){
   const level=id=>state.up[id]||0;
   const c=PptBalance.configure(day,cfgFor(day));
+  if(tuning?.cityFreight){c.big=.12;if(tuning.coldFreight)c.cold=.14;}
   if(ev==='bf'){c.cust/=tuning?.softRush?1.5:2;c.pat*=tuning?.softRush?.9:.75;c.pay=1.5;c.goal=Math.round(c.goal*1.5);}
   if(ev==='chaos'){c.trucks=c.trucks.concat([105]).sort((a,b)=>a-b);}
   if(ev==='sale11'){c.prime=.5;c.multi=Math.max(c.multi,.4);c.pay=1.3;c.goal=Math.round(c.goal*1.3);}
@@ -43,7 +44,7 @@ function dayConfig(day,ev,card,state,tuning){
   const unload=10+3*(1+level('cart'))+(level('conveyor')?6:0)+(level('robot')?4:0)+6*state.staff.filter(x=>x.role==='load').length;
   c.cargo=Math.max(5,Math.min(unload,Math.round(custs*1.05/c.trucks.length)));
   const usable=b=>b&&!b.r&&!b.spoiled&&(b.cold==null||b.cold>0)&&
-    b.c>=0&&b.c<c.colors&&(b.s===BIG?day>=21:b.s>=0&&b.s<c.shapes);
+    b.c>=0&&b.c<c.colors&&(b.s===BIG?c.big>0:b.s>=0&&b.s<c.shapes);
   const existing=state.stock.flat(2).filter(usable).length+
     state.floor.flat().filter(usable).length+state.big.flat().filter(usable).length+
     state.fridge.filter(usable).length+state.locker.filter(usable).length;

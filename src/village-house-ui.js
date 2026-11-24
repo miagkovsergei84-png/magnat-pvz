@@ -232,6 +232,10 @@ globalThis.VillageHouseUI = (() => {
           card.append(pic);
         }
         const body = node('span','vhouse__copy');
+        if (label.set) {
+          card.classList.add('vhouse__choice--set');
+          body.append(node('span','vhouse__set',label.set));
+        }
         if (label.style) body.append(node('small','vhouse__style',label.style));
         body.append(node('strong','vhouse__label',label.title),node('span','vhouse__perk',label.perk));
         card.append(body);
@@ -271,12 +275,20 @@ globalThis.VillageHouseUI = (() => {
       dialog.classList.add('vhouse--repair');
       const row = Math.max(0,Math.min(4,Math.trunc(config.level || 1)-1));
       title.textContent = levels[row][ix];
+      const perks = globalThis.PptVillagePerks, bonus = perks?.SET_BONUS || 5;
+      const earlier = config.home.choices.slice(0,row);
       summary.textContent = houseName + ' · ' + t('Ремонт ','Repair ') + (row+1) + '/5. ' + levels[row][ix+2] + ' ' +
-        t('Для этого уровня можно выбрать один вариант до конца прохождения.', 'Choose one option for this level for the rest of this run.');
+        t('Для этого уровня можно выбрать один вариант до конца прохождения.', 'Choose one option for this level for the rest of this run.') + ' ' +
+        (row ? t('Звездой ★ отмечен стиль, который уже есть в доме: такая деталь набора даёт +$'+bonus+' за каждую смену.',
+          'A star ★ marks a style your house already has: each matching piece adds $'+bonus+' every shift.') :
+          t('Повторите этот стиль на следующих ремонтах, и каждая деталь набора даст +$'+bonus+' за смену.',
+            'Repeat this style in later repairs and each matching piece will add $'+bonus+' per shift.'));
       choiceCards(styles.map((key,i)=>{
         const item = options[row][i];
-        const choices=[...config.home.choices.slice(0,row),key];
-        return {key,style:styleNames[i][ix],title:item[ix],perk:item[ix+2],repairHome:{...config.home,choices}};
+        const choices=[...earlier,key];
+        const pieces = earlier.filter(style=>style===key).length + 1;
+        const set = pieces > 1 ? t('★ Набор '+pieces+'/5 · +$'+bonus+' за смену','★ Set '+pieces+'/5 · +$'+bonus+' per shift') : '';
+        return {key,style:styleNames[i][ix],title:item[ix],perk:item[ix+2],set,repairHome:{...config.home,choices}};
       }),config.onRepair,t('Установить','Install'));
     } else if (config.kind === 'radio') {
       title.textContent = t('Музыка на смену','Music for this shift');
@@ -405,10 +417,11 @@ globalThis.VillageHouseUI = (() => {
           return;
         }
         const goals = node('div','vhouse__goals');
-        const goalTitle = node('h3','',t('Найдите','Find'));
+        const goalTitle = node('h3','',t('Найдите сейчас','Find next'));
         goalTitle.id = 'vhouseFindTitle';
         const list = node('ul','vhouse__targets');
         list.setAttribute('aria-labelledby',goalTitle.id);
+        list.setAttribute('aria-live','polite');
         goals.append(goalTitle,list);
         const controls = node('div','vhouse__tools');
         const zoomText = node('span','vhouse__tool-text',t('Увеличить','Zoom in'));
@@ -442,13 +455,15 @@ globalThis.VillageHouseUI = (() => {
         sidebar.append(goals);
         const buttons = new Map();
         function atPointer(e, fallback) {
-          if (!e.detail || buttons.get(fallback)?.classList.contains('vhouse__hot--hint')) return fallback;
+          if (!e.detail) return fallback;
           for (const [id, hit] of Array.from(buttons).reverse()) {
             const r = hit.getBoundingClientRect();
             const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
             if (x >= 0 && y >= 0 && x < 1 && y < 1 && opaqueAt(hit.firstChild,x,y)) return hit.disabled ? null : id;
           }
-          return null;
+          // A hint may accept the empty centre of a hollow object. Only do
+          // so when no other painted object occupies the tapped pixel.
+          return buttons.get(fallback)?.classList.contains('vhouse__hot--hint') ? fallback : null;
         }
         function paintItems() {
           const ids = search.pending(state);

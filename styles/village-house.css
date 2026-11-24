@@ -56,6 +56,12 @@
 }
 .vhouse .vhouse__copy { display: flex; flex-direction: column; gap: 4px; padding: 10px 13px 13px; }
 .vhouse .vhouse__style { font-size: 12px; font-weight: 650; color: #725533; }
+.vhouse .vhouse__choice--set { border-color: #c89b40; background: #fff8e4; }
+.vhouse .vhouse__set {
+  align-self: flex-start; padding: 2px 8px; border-radius: 999px;
+  background: #f7e3a6; border: 1px solid #c89b40; color: #5b3d0c;
+  font-size: 12px; font-weight: 750; line-height: 1.35;
+}
 .vhouse .vhouse__label { color: var(--vh-green); font: bold 18px/1.15 Georgia,serif; }
 .vhouse .vhouse__perk { color: var(--vh-ink); font-size: 14px; line-height: 1.35; }
 .vhouse .vhouse__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 15px; }
@@ -358,7 +364,7 @@
   .vhouse--search .vhouse__finds { flex-direction: column; align-items: stretch; padding-left: max(10px,env(safe-area-inset-left)); padding-right: max(10px,env(safe-area-inset-right)); }
   .vhouse--search .vhouse__goals { display: block; }
   .vhouse--search .vhouse__goals h3 { font-size: 16px; margin-bottom: 3px; }
-  .vhouse--search .vhouse__targets { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 2px 7px; font-size: 13px; line-height: 1.2; }
+  .vhouse--search .vhouse__targets { display: block; font-size: 16px; line-height: 1.25; }
   .vhouse--search .vhouse__targets li + li::before { content: none; }
   .vhouse--search .vhouse__tools > button { flex: 1; min-height: 44px; font-size: 14px; }
   .vhouse--search .vhouse__targets { max-height: 6.5em; overflow-y: auto; }

@@ -86,13 +86,14 @@ globalThis.PptCampaignUI = (() => {
       '<p class="campaignChoice__empty">' + escape(w.noStaff) + '</p>' + action('campaignRescue', w.rescue, 'choice')) + '<div class="campaignActions">' +
       '<button type="button" class="campaignButton campaignButton--secondary" data-a="campaignContinue" disabled aria-disabled="true">' + escape(w.back) + '</button>' + '</div></section>';
   }
-  function dialogue({lang = 'en', speaker = '', text = '', portrait = '', location = 'village', ownedHouse = false, buttonLabel} = {}) {
+  function dialogue({lang = 'en', speaker = '', text = '', portrait = '', location = 'village', ownedHouse = false, townChoices = null, buttonLabel} = {}) {
     const w = locale(lang), path = Object.prototype.hasOwnProperty.call(portraitPaths, portrait) ? portraitPaths[portrait] : '';
     const img = path ? '<img class="campaignDialogue__portrait campaignDialogue__portrait--' + escape(portrait) + '" src="' + path + '" alt="" loading="eager" decoding="async">' : '';
     const villageHouse = location === 'village' && ownedHouse;
-    const backdrop = villageHouse ? '<canvas class="campaignDialogue__house" aria-hidden="true"></canvas>' : '';
+    const townHouse=location==='town'&&Array.isArray(townChoices)&&townChoices.length>0;
+    const backdrop = villageHouse ? '<canvas class="campaignDialogue__house" aria-hidden="true"></canvas>' : townHouse&&globalThis.PptTownUI?PptTownUI.canvas(townChoices,'campaignDialogue__town-house'):'';
     return '<section class="campaignScreen campaignDialogue" role="dialog" aria-modal="true" aria-label="' + escape(speaker || w.next) + '">' +
-      '<div class="campaignDialogue__scene campaignDialogue__scene--' + (villageHouse ? 'owned' : location === 'capital' ? 'capital' : location === 'city-center' ? 'city-center' : location === 'city' ? 'city' : location === 'town' ? 'town' : 'village') + '">' + backdrop + '<div class="campaignDialogue__tools"><button type="button" data-a="dialogueLanguage" class="campaignDialogue__tool" aria-label="' + (lang === 'ru' ? 'Сменить язык' : 'Change language') + '">' + (lang === 'ru' ? 'EN' : 'RU') + '</button><button type="button" data-a="dialoguePause" class="campaignDialogue__tool" aria-label="' + (lang === 'ru' ? 'Пауза' : 'Pause') + '">Ⅱ</button></div>' + img + '</div><div class="campaignDialogue__box">' +
+      '<div class="campaignDialogue__scene campaignDialogue__scene--' + (villageHouse ? 'owned' : townHouse?'townOwned':location === 'capital' ? 'capital' : location === 'city-center' ? 'city-center' : location === 'city' ? 'city' : location === 'town' ? 'town' : 'village') + '">' + backdrop + '<div class="campaignDialogue__tools"><button type="button" data-a="dialogueLanguage" class="campaignDialogue__tool" aria-label="' + (lang === 'ru' ? 'Сменить язык' : 'Change language') + '">' + (lang === 'ru' ? 'EN' : 'RU') + '</button><button type="button" data-a="dialoguePause" class="campaignDialogue__tool" aria-label="' + (lang === 'ru' ? 'Пауза' : 'Pause') + '">Ⅱ</button></div>' + img + '</div><div class="campaignDialogue__box">' +
       (speaker ? '<strong class="campaignDialogue__speaker">' + escape(speaker) + '</strong>' : '') +
       '<p class="campaignDialogue__text" data-dialogue-text="true" aria-label="' + escape(text) + '">' + escape(text) + '</p><div class="campaignDialogue__actions">' + action('campaignSceneNext', buttonLabel || w.next, 'next') + '</div></div></section>';
   }

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Мегаполис · Срочная доставка</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="runner.css"><link rel="preload" href="art-v2/street-a.webp" as="image"><link rel="preload" href="art-v3/hero-run-v3-0.webp" as="image"></head>
+<body><p id="campaign-wait" role="status" data-en="Loading your delivery…" hidden>Загружаем доставку…</p><p id="campaign-error" role="alert" hidden></p><main id="planner">
+  <header><span class="eyebrow" data-en="PICKUP POINT TYCOON · METROPOLIS">МАГНАТ ПВЗ · МЕГАПОЛИС</span><h1 data-en="Express delivery">Срочная доставка</h1><p data-en="Nika: “We have four parcels to deliver. Some streets are closed — can you plan a route?”">Ника: «Нужно развезти четыре посылки. Улицы перекрыты — поможешь с маршрутом?»</p></header>
+  <section class="stats" aria-label="План доставки" data-en-aria="Delivery plan"><div><small data-en="Stops">Доставки</small><strong id="deliveries">0/4</strong></div><div><small data-en="Route">Маршрут</small><strong id="time">0 мин</strong></div><div><small data-en="Goal">Цель</small><strong id="budget">—</strong></div><div class="chosen-crossings" title="Число переходов; начальная точка не считается" data-en-title="Number of crossings, excluding the start"><small data-en="Crossings">Перекрёстки</small><strong id="selected-crossings" aria-label="Выбрано перекрёстков: 0">0</strong></div></section>
+  <div class="map-frame"><svg id="map" viewBox="0 0 500 500" role="group" aria-label="Карта района и маршрут курьера" data-en-aria="District map and courier route"></svg><div class="map-badge" data-en="DISTRICT MAP">ПЛАН РАЙОНА</div></div>
+  <div class="legend"><span><i class="normal"></i><span data-en="Quiet: 1 min">Тихая: 1 мин</span></span><span><i class="traffic"></i><span data-en="Busy: 3 min">Пробка: 3 мин</span></span><span><i class="closed"></i><span data-en="Closed">Перекрыто</span></span></div>
+  <p id="message" role="status">Нажимай на соседние перекрёстки от нашего ПВЗ. Посети четыре точки в любом порядке.</p>
+  <div class="actions"><button id="undo" class="secondary" data-en="↶ Undo step">↶ Шаг назад</button><button id="reset" class="secondary" data-en="Reset">Сбросить</button><button id="dispatch" disabled>Начать доставку</button><button id="new" class="quiet">Другой район — новый маршрут</button><button id="campaign-exit" type="button" class="secondary quiet" data-en="Save and exit" hidden>Сохранить и выйти</button></div>
+  <footer data-en="Playable preview · standalone minigame">Играбельное превью · отдельная мини-игра</footer>
+</main>
+<section id="runner-screen" class="runner-screen" aria-label="Срочная доставка: раннер" data-en-aria="Express delivery: runner" hidden>
+  <header class="runner-head">
+    <div class="runner-stats"><div class="runner-goal"><small data-en="DELIVERY">ДОСТАВКА</small><strong id="runner-score">0/4</strong></div><div class="runner-goal runner-crossings"><small data-en="CROSSINGS">ПЕРЕКРЁСТКИ</small><strong id="runner-crossings" aria-label="Пройдено перекрёстков: 0 из 0">0/0</strong></div></div>
+    <div class="runner-health"><div id="runner-hearts" role="img" aria-label="Пять жизней"><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span></div><small id="runner-road">Улица 1</small></div>
+    <button id="runner-pause" type="button" aria-label="Пауза">Ⅱ</button>
+    <div id="runner-progress" role="progressbar" aria-label="Пройденная часть маршрута" data-en-aria="Distance covered" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+  </header>
+  <div class="runner-stage">
+    <canvas id="runner-world" width="720" height="1200" tabindex="0" aria-label="Игровое поле. Свайп влево или вправо меняет полосу, вверх — прыжок, вниз — подкат." data-en-aria="Game field. Swipe left or right to change lanes, up to jump, and down to slide."></canvas>
+    <div class="runner-overlay" id="runner-overlay">
+      <article class="runner-panel">
+        <span class="runner-kicker" data-en="METROPOLIS · EXPRESS DELIVERY">МЕГАПОЛИС · СРОЧНАЯ ДОСТАВКА</span>
+        <h2 id="runner-title">На старт!</h2>
+        <p id="runner-text"></p>
+        <div class="runner-tips" id="runner-tips"><span data-en="↔ Change lanes">↔ &nbsp;Смена полосы</span><span data-en="↑ Jump">↑ &nbsp;Прыжок</span><span data-en="↓ Slide">↓ &nbsp;Подкат</span><span data-en="🚗 Avoid cars">🚗 &nbsp;Обходи машины</span></div>
+        <button id="runner-primary" type="button">Бежать</button>
+        <button id="runner-back" type="button" class="secondary" data-en="Back to route">К маршруту</button>
+        <button id="runner-exit" type="button" class="secondary" data-en="Save and exit" hidden>Сохранить и выйти</button>
+      </article>
+    </div>
+  </div>
+  <footer class="runner-controls" aria-label="Управление курьером" data-en-aria="Courier controls">
+    <button data-run-command="left" aria-label="Полоса влево" data-en-aria="Move left one lane"><b>←</b><small data-en="Left">Влево</small></button>
+    <button data-run-command="jump" aria-label="Прыжок" data-en-aria="Jump"><b>↑</b><small data-en="Jump">Прыжок</small></button>
+    <button data-run-command="slide" aria-label="Подкат" data-en-aria="Slide"><b>↓</b><small data-en="Slide">Подкат</small></button>
+    <button data-run-command="right" aria-label="Полоса вправо" data-en-aria="Move right one lane"><b>→</b><small data-en="Right">Вправо</small></button>
+  </footer>
+</section>
+<script src="model.js"></script><script src="street-visual-plan.js"></script><script src="runner-motion-clock.js"></script><script src="runner-model.js"></script><script src="art-v3/register.js"></script><script src="art-v5-streets/inventory.js"></script><script src="courier-i18n.js"></script><script src="checkpoint.js"></script><script src="campaign-bridge.js"></script><script src="runner-view-v2.js"></script><script src="runner-ui.js"></script><script src="game.js"></script></body></html>

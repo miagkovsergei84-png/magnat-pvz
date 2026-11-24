@@ -77,7 +77,14 @@ globalThis.PptVillageSearch=(()=>{
       const j=Math.floor(Math.random()*(i+1));
       [rest[i],rest[j]]=[rest[j],rest[i]];
     }
-    return [...previous,...rest,finale];
+    // Preserve the saved order wherever possible. An older random plan may
+    // request an item behind another one, so put all its covers before it.
+    const ordered=new Set();
+    for(const id of [...previous,...rest,finale]){
+      for(const blocker of covers.get(id).slice().reverse())ordered.add(blocker);
+      ordered.add(id);
+    }
+    return [...ordered];
   }
   function normaliseClearing(raw){
     const plan=rooms.map((room,i)=>makePlan(room,raw?.plan?.[i]));
@@ -112,8 +119,9 @@ globalThis.PptVillageSearch=(()=>{
     return stacks[state.room].filter(item=>!state.found.includes(item.id));
   }
   function pending(state){
-    const visible=new Set(layers(state).filter(item=>covers.get(item.id).every(id=>state.found.includes(id))).map(item=>item.id));
-    return state.plan[state.room].filter(id=>visible.has(id));
+    const found=new Set(state.found);
+    const next=state.plan[state.room].find(id=>!found.has(id)&&covers.get(id).every(blocker=>found.has(blocker)));
+    return next?[next]:[];
   }
   function isClearingComplete(raw){
     if(!raw||raw.room!==2||raw.plan?.length!==3)return false;

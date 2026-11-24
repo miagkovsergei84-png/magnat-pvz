@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Магнат ПВЗ — Сортировочный центр</title>
+<link rel="stylesheet" href="../../styles/fonts.css">
+<style>
+/* The board has one viewport-only size and position. Fixed chrome slots keep
+   its geometry stable while goals, tutorials, charges and overlays change. */
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#101b27;color:#fff5e7;font-family:Nunito,system-ui,sans-serif}
+body{min-height:100svh;padding:8px;display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(ellipse at 50% 10%,#253447 0%,#101b27 68%);overflow-x:hidden;overscroll-behavior-y:contain}
+button{font:inherit;font-weight:800;color:#fff5e7;background:#344555;border:1px solid #62758b;border-radius:9px;min-height:40px;cursor:pointer;touch-action:manipulation}
+button:focus-visible,canvas:focus-visible{outline:3px solid #80d7ff;outline-offset:-3px}
+button:disabled{opacity:.5;cursor:default}[hidden]{display:none!important}
+.arcade{--gap:5px;--hud-h:56px;--levels-h:40px;--goals-h:68px;--brief-h:112px;--helpers-h:64px;--dock-h:20px;--controls-h:50px;--guide-h:24px;
+  width:min(100%,442px);min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gap);align-items:start;
+  grid-template-rows:var(--hud-h) var(--levels-h) var(--goals-h) var(--brief-h) var(--helpers-h) auto var(--dock-h) var(--controls-h) auto;
+  grid-template-areas:"hud" "levels" "goals" "brief" "helpers" "board" "dock" "controls" "guide"}
+.board-column,.game-rail{display:contents}
+.hud{grid-area:hud;height:var(--hud-h)}
+.levels{grid-area:levels;height:var(--levels-h)}
+.goals{grid-area:goals;height:var(--goals-h)}
+.brief-slot{grid-area:brief;height:var(--brief-h)}
+.helper-slot{grid-area:helpers;height:var(--helpers-h)}
+.board{grid-area:board}
+.dock-slot{grid-area:dock;height:var(--dock-h)}
+.controls{grid-area:controls;height:var(--controls-h)}
+.fine-guide{grid-area:guide;min-height:var(--guide-h)}
+.hud,.goals,.controls,.helpers,.levels,.tutorial-card,.battle-guide,.helper-placeholder{border:1px solid #506071;box-shadow:0 3px 12px #050a124d;border-radius:11px}
+.hud{display:flex;align-items:center;gap:8px;padding:6px 10px;background:linear-gradient(120deg,#293c51,#192737)}
+.identity{flex:1;min-width:0}
+.identity .eyebrow{display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap}
+.identity .eyebrow .brand{font-size:9px;letter-spacing:.12em;color:#d6b780;font-weight:800}
+.identity .phase{color:#e5bf83;background:#403a2e;border:1px solid #846842;border-radius:99px;padding:2px 6px;font-size:9px;font-weight:800;letter-spacing:.04em;line-height:1.1;white-space:nowrap}
+.compact-brief-link,.field-jump{display:none;color:#f2d39d;font-size:11px;font-weight:800;text-decoration:underline;white-space:nowrap;touch-action:manipulation}
+.compact-brief-link .training-link{display:none}.arcade.is-training .compact-brief-link .training-link{display:inline}.arcade.is-training .compact-brief-link .battle-link{display:none}
+.identity h1{font-size:clamp(15px,4.1vw,20px);line-height:1.1;margin:0;font-weight:900}
+.moves{position:relative;display:grid;place-content:center;text-align:center;background:#111e2c;border:1px solid #65717b;border-radius:9px;padding:3px 7px;min-width:58px;height:100%;line-height:1}
+.moves small{color:#bdcddd;font-size:9px;letter-spacing:.06em}
+.moves b{display:block;margin-top:2px;font-weight:900;font-size:22px;color:#fdd381}
+.moves .stars{position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#182739;border-radius:3px;padding:1px 3px;color:#c9a86f;font-size:10px;letter-spacing:1.5px;line-height:1;white-space:nowrap}
+.levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:3px;gap:3px;background:#182635}
+.levels button{border-radius:6px;min-height:0;height:100%;color:#c4d3e1;background:#243447;border-color:#415367;font-size:11px;padding:2px;white-space:nowrap}
+.levels button[aria-pressed=true]{color:#ffdf9e;background:linear-gradient(#5d4a31,#483a2a);border-color:#b89a61;box-shadow:inset 0 1px #d2ad6a66}
+.goals{display:flex;flex-wrap:nowrap;align-items:stretch;gap:4px;padding:4px;background:#152332;min-width:0;overflow:hidden}
+.goal{position:relative;display:grid;grid-template-columns:auto 1fr;grid-template-rows:1fr auto;gap:1px 3px;align-items:center;flex:1 1 0;min-width:0;padding:3px 4px;border:1px solid #405063;border-radius:7px;background:linear-gradient(#28384a,#1f2e40);white-space:normal;text-align:center}
+.goal canvas{width:26px;height:26px;grid-column:1;grid-row:2;margin:auto}
+.goal b{font-size:14px;font-weight:900;letter-spacing:-.3px;grid-column:2;grid-row:2;white-space:nowrap;text-align:left;color:#fdd381}
+.goal .goal-label{display:flex;align-items:center;justify-content:center;grid-column:1/-1;grid-row:1;color:#d1deeb;font-weight:800;font-size:10px;line-height:1.13;overflow-wrap:anywhere}
+.goals:not(:has(.goal:not([hidden]) ~ .goal:not([hidden]))) .goal{display:flex;justify-content:center;gap:6px;padding:4px 8px}
+.goals:not(:has(.goal:not([hidden]) ~ .goal:not([hidden]))) .goal canvas{margin:0}
+.goal.done{background:linear-gradient(#2c463b,#24372f);border-color:#70926d}
+.goal.done b{color:#c6e8b7}.goal.done .goal-label{color:#cee8c6}
+.goal.done::after{content:'✓';position:absolute;top:2px;right:4px;font-size:10px;font-weight:900;color:#b9dd9e}
+.brief-slot,.helper-slot,.dock-slot{position:relative;min-width:0}
+.tutorial-card,.battle-guide,.helpers,.helper-placeholder{height:100%;min-height:0}
+.tutorial-card,.battle-guide{display:flex;flex-direction:column;gap:4px;padding:7px 9px;background:linear-gradient(120deg,#3c372d,#26384a 78%);border-color:#a88b5a;overflow:hidden}
+.brief-slot:has(#tutorialPanel:not([hidden])) .battle-guide{display:none}
+.tutorial-heading{display:flex;align-items:center;gap:7px;min-width:0;flex:0 0 34px}
+.tutorial-intro{min-width:0;flex:1}
+.tutorial-step{display:block;font-size:10px;letter-spacing:.08em;line-height:1.1;color:#ffe0a4;font-weight:900}
+.tutorial-card h2,.battle-guide h2{font-size:15px;font-weight:900;line-height:1.1;color:#fff1d8;margin:2px 0 0}
+#tutorialText,.battle-guide p{font-size:12px;line-height:1.23;color:#e1e7ed;margin:0;min-height:0;overflow:auto;scrollbar-width:thin;overscroll-behavior-y:contain}
+.tutorial-skip{flex:none;min-height:34px;font-size:11px;font-weight:800;border:1px solid #7b7161;background:#303944;color:#d8dee4;padding:4px 7px}
+.tutorial-card #tutorialAction{flex:0 1 auto;max-width:47%;min-height:34px;padding:4px 7px;font-size:11px;line-height:1.12}
+.tutorial-card:has(#tutorialAction:not([hidden])) #tutorialSkip{display:none}
+.battle-guide{background:linear-gradient(120deg,#23384f,#1d2b3a);border-color:#526173;justify-content:center}
+.battle-guide .guide-extra{display:none}
+.arcade:has(#retGoal:not([hidden])) .guide-returns,.arcade:has(#badGoal:not([hidden])) .guide-obstacles,.arcade:has(#wrapGoal:not([hidden])) .guide-obstacles{display:block}
+.arcade:not(:has(#retGoal:not([hidden]))):not(:has(#badGoal:not([hidden]))):not(:has(#wrapGoal:not([hidden]))) .guide-gold{display:block}
+.board{position:relative;isolation:isolate;width:100%;aspect-ratio:7/8;overflow:hidden;background:linear-gradient(#1d252dc4,#17222acc),url('../../assets/environment/sample-v1/floor-sample-v1.png');background-size:auto,128px;border:2px solid #9b7848;border-radius:13px;box-shadow:0 7px 18px #0008,inset 0 0 0 1px #d0a56822}
+.board>canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab}
+.board>canvas:active{cursor:grabbing}
+/* A separate overlay keeps the instructional pulse visible without Canvas
+   invalidation, changing only brightness (not tile positions or hit targets). */
+.training-cue-layer{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.training-cell-cue{position:absolute;pointer-events:none}
+.training-cell-cue::before{content:'';position:absolute;inset:2px;border:3px solid #94e9ff;border-radius:8px;background:#37c7ff12;opacity:var(--cue-opacity,1);box-shadow:inset 0 0 8px #38caff66,0 0 0 2px #38caff77,0 0 13px #38caffb0;animation:tutorial-cell-pulse 1.2s ease-in-out infinite}
+@keyframes tutorial-cell-pulse{0%,100%{opacity:.36;border-color:#3dc8fb;background:#37c7ff05;box-shadow:inset 0 0 2px #38caff40,0 0 2px #38caff44}50%{opacity:1;border-color:#c7f6ff;background:#37c7ff25;box-shadow:inset 0 0 10px #38caff88,0 0 0 2px #4dd7ff99,0 0 15px #45d2ffcf}}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:14px;background:#101926c9;backdrop-filter:blur(2px);z-index:2}
+.panel{width:100%;max-width:310px;padding:15px;background:#243243;border:1px solid #b69265;border-radius:16px;box-shadow:0 10px 36px #0008;text-align:center}
+.panel h2{margin:0 0 8px}.panel p{font-size:14px}.panel button{width:100%;margin-top:6px}
+.dock-legend,.dock-placeholder{height:100%;display:grid;place-items:center;border-radius:0 0 7px 7px;padding:1px 6px;font-size:10px;line-height:1.1;font-weight:800}
+.dock-legend{background:#4c3b2a;color:#f7dba5;border:1px solid #8e714d;border-top:0}
+.dock-placeholder{background:#233141;color:#91a5b9;border:1px solid #3c5064}
+.dock-slot:has(#dockLegend:not([hidden])) .dock-placeholder{display:none}
+.helpers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto minmax(0,1fr);gap:3px 5px;padding:4px 6px 5px;background:#1c2a39}
+.helper-label{grid-column:1/-1;font-size:9px;color:#d6b780;letter-spacing:.06em;font-weight:800;text-align:left;padding-left:2px;line-height:1.05}
+.helpers .tool{min-width:0;display:flex;align-items:center;gap:3px;text-align:left;padding:4px 5px;min-height:0;height:100%;border-color:#627183;border-radius:8px;background:linear-gradient(#35475b,#29394b)}
+.tool canvas{width:32px;height:32px;flex:0 0 32px}
+.tool-copy{min-width:0;display:flex;flex-direction:column;flex:1;gap:2px}
+.tool-copy b{font-size:13px;color:#fff0d9;line-height:1}
+.tool-copy small{font-size:10px;font-weight:600;color:#d3dfeb;line-height:1.05;white-space:normal;overflow-wrap:anywhere}
+.tool-charge{min-width:18px;padding:2px 4px;border-radius:50%;font-size:11px;text-align:center;line-height:1.2;color:#41290d;background:#f1c578;align-self:flex-start}
+.tool[aria-pressed=true]{background:linear-gradient(#685338,#53412d);border-color:#e2b96f;box-shadow:0 0 0 1px #edbd7166}
+.tool:disabled{opacity:.58}.tool:disabled .tool-charge{background:#6c7987;color:#e0e6ed}
+.helpers:has(.tool[hidden]) .tool:not([hidden]){grid-column:1/-1}
+.arcade.is-training .helpers .tool{border-color:#9f8252}
+/* All actionable teaching controls share the pulsing blue guide of the canvas. */
+button.tutorial-focus:not(:disabled){position:relative;border-color:#92e0ff;outline:3px solid rgba(110,222,255,var(--cue-opacity,1));outline-offset:1px;box-shadow:0 0 0 2px rgba(56,202,255,var(--cue-opacity,.6)),0 0 12px rgba(56,202,255,var(--cue-opacity,.6));animation:tutorial-blue-pulse 1.2s ease-in-out infinite}
+@keyframes tutorial-blue-pulse{0%,100%{outline-color:#3dc8fb60;box-shadow:0 0 0 1px #45d2ff33,0 0 3px #56c9ff3d}50%{outline-color:#c7f6ff;box-shadow:0 0 0 3px #45d2ff99,0 0 15px #56c9ffcf}}
+.helper-placeholder{display:flex;align-items:center;gap:8px;background:linear-gradient(#223344,#192a3a);padding:7px 9px}
+.helper-placeholder .placeholder-icon{font-size:22px;color:#a9b7c5;line-height:1}
+.helper-placeholder b{display:block;font-size:12px;color:#ddd3bf}
+.helper-placeholder small{display:block;font-size:11px;color:#b2c2d1;line-height:1.2}
+.helper-slot:has(#helpers:not([hidden])) .helper-placeholder{display:none}
+.helper-placeholder .training-placeholder{display:none}
+.arcade.is-training .helper-placeholder .training-placeholder{display:block}
+.arcade.is-training .helper-placeholder .battle-placeholder{display:none}
+.controls{display:flex;align-items:center;gap:5px;padding:4px 6px;background:linear-gradient(#263649,#1c2a3a)}
+.controls button{min-height:34px;padding:4px 7px;font-size:11px;white-space:nowrap}
+.message{flex:1;min-width:0;max-height:100%;overflow:auto;font-size:11px;line-height:1.22;color:#d5dfeb;scrollbar-width:thin}
+.controls:has(#campaignSaveStatus:not([hidden])) #message{display:none}
+.controls:has(#campaignRetrySave:not([hidden])) #hint,.controls:has(#campaignRetrySave:not([hidden])) #restart{display:none}
+#campaignSaveStatus{flex:1;min-width:0;max-height:100%;overflow:auto;font-size:11px;color:#ffdba6;line-height:1.2}
+#campaignExit{background:#293d50;color:#dbe5ef}
+.gold{background:linear-gradient(#ffd485,#eab25c);border-color:#e6bd80;color:#362410;box-shadow:0 2px 0 #9f6e33}
+.fine-guide{color:#b8c8d7;font-size:11px;line-height:1.35;padding:1px 6px 3px}
+.fine-guide summary{text-align:center;cursor:pointer;font-weight:800;color:#c5d2df;font-size:11px;min-height:20px}
+.fine-guide ul{margin:5px 0 0;padding:7px 5px 6px 20px;background:#172432;border:1px solid #425268;border-radius:9px}
+.fine-guide li+li{margin-top:5px}
+@media(max-width:360px){
+  body{padding:6px}
+  .arcade{--gap:4px;--hud-h:52px;--levels-h:36px;--goals-h:76px;--brief-h:118px;--helpers-h:60px;--dock-h:18px;--controls-h:48px}
+  .goal{grid-template-columns:1fr;grid-template-rows:1fr auto auto;justify-items:center;gap:0;padding:2px 3px}
+  .goal canvas{grid-column:1;grid-row:2;width:22px;height:22px}
+  .goal b{grid-column:1;grid-row:3;text-align:center;font-size:12px;line-height:1.1}
+  .goal .goal-label{font-size:9px;line-height:1.08}
+  .identity .eyebrow{gap:3px}.identity .eyebrow .brand{font-size:8px}.identity .phase{font-size:8px;padding:2px 4px}
+  .tool canvas{width:27px;height:27px;flex-basis:27px}.tool-copy b{font-size:12px}.tool-copy small{font-size:9px}.tool-charge{font-size:10px;padding:2px 3px;min-width:15px}
+  .controls button{padding:4px 5px}
+  #tutorialText,.battle-guide p{font-size:11px;line-height:1.23}
+}
+/* A short display may scroll normally above/below/alongside the canvas.
+   Do not shrink the board or remove its input regions to fit auxiliary panels. */
+@media(max-height:660px){.identity .eyebrow .brand{display:none}}
+@media(max-height:660px) and (max-width:759px){
+  /* Read/jump controls live outside the touch-action:none canvas; the entire
+     field is only a short page scroll away. This order is identical in every
+     stage and exercise, including the appearance of the tutorial action. */
+  .arcade{grid-template-rows:var(--hud-h) var(--levels-h) var(--goals-h) var(--helpers-h) auto var(--dock-h) var(--brief-h) var(--controls-h) auto;
+    grid-template-areas:"hud" "levels" "goals" "helpers" "board" "dock" "brief" "controls" "guide"}
+  .compact-brief-link,.field-jump{display:inline-flex;align-items:center;min-height:22px}
+  .field-jump{margin-left:5px;font-size:10px}
+  .tutorial-step{display:inline-block}
+  #briefing,#helperSlot{scroll-margin-top:6px}
+}
+@media(min-width:760px){
+  .arcade{width:min(100%,744px);--gap:8px;--brief-h:156px;--helpers-h:82px;--controls-h:66px;grid-template-columns:minmax(0,442px) minmax(0,294px);grid-template-rows:auto;grid-template-areas:"field rail";align-items:start}
+  .board-column,.game-rail{display:flex;flex-direction:column;gap:var(--gap);min-width:0}
+  .board-column{grid-area:field}.game-rail{grid-area:rail}
+  .board-column>.hud,.board-column>.levels,.board-column>.goals,.board-column>.board,.board-column>.dock-slot,.game-rail>*{flex:none}
+  .tutorial-card,.battle-guide{padding:10px;gap:7px}
+  .tutorial-heading{flex-basis:40px}
+  .tool canvas{width:36px;height:36px;flex-basis:36px}
+  .controls{flex-wrap:wrap;justify-content:flex-end;gap:4px}.message{flex:1 0 100%;max-height:22px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}button.tutorial-focus:not(:disabled),.training-cell-cue::before{animation-duration:1.5s}}
+</style></head><body>
+<main class="arcade">
+<div class="board-column">
+<header class="hud"><div class="identity"><div class="eyebrow"><span class="brand">МАГНАТ ПВЗ</span><span id="phase" class="phase">БОЕВАЯ ПАРТИЯ</span><a class="compact-brief-link" href="#briefing"><span class="battle-link">Памятка ↓</span><span class="training-link">Задание ↓</span></a></div><h1 id="stageName">Сортировочный центр</h1></div><div class="moves"><small>ХОДЫ</small><b id="moves">32</b><span class="stars" id="stars" aria-label="Звёзды">☆☆☆</span></div></header>
+<nav class="levels" aria-label="Этапы"><button data-level="0" aria-pressed="true">1. Партия</button><button data-level="1" aria-pressed="false">2. Возвраты</button><button data-level="2" aria-pressed="false">3. Завал</button></nav>
+<section class="goals" aria-label="Задачи партии"><div class="goal" id="normalGoal" title="Сортируй одинаковые по цвету и знаку коробки"><canvas id="normalIcon" width="56" height="56" aria-hidden="true"></canvas><span class="goal-label">Собрать посылки</span><b id="normal">0/120</b></div><div class="goal" id="retGoal" hidden title="Опусти возвраты до нижней линии"><canvas id="returnIcon" width="56" height="56" aria-hidden="true"></canvas><span class="goal-label">Спустить возвраты</span><b id="returns">0/3</b></div><div class="goal" id="badGoal" hidden title="Собери тройку по стороне рядом с порчей"><canvas id="badIcon" width="56" height="56" aria-hidden="true"></canvas><span class="goal-label">Убрать порчу</span><b id="spoiled">0/3</b></div><div class="goal" id="wrapGoal" hidden title="Собери тройку по стороне рядом со связанной коробкой"><canvas id="wrapIcon" width="56" height="56" aria-hidden="true"></canvas><span class="goal-label">Освободить связанные</span><b id="wrapped">0/2</b></div></section>
+<section class="board"><canvas id="board" width="840" height="960" tabindex="0" aria-label="Игровое поле: удерживайте и перетаскивайте коробки пальцем или выберите две соседние"></canvas><div class="training-cue-layer" aria-hidden="true"><span id="trainingCueA" class="training-cell-cue" hidden></span><span id="trainingCueB" class="training-cell-cue" hidden></span></div><div id="overlay" class="overlay" hidden><div class="panel"><h2 id="resultTitle"></h2><p id="resultText"></p><button id="next" class="gold">Далее</button><button id="retry">Повторить</button></div></div></section>
+<div class="dock-slot"><div id="dockLegend" class="dock-legend" hidden>↓ Нижний ряд — отправка возвратов</div><div class="dock-placeholder">Нижняя опора игрового поля</div></div>
+</div>
+<div class="game-rail">
+<div class="brief-slot" id="briefing">
+<section id="tutorialPanel" class="tutorial-card" hidden aria-label="Учебная партия"><div class="tutorial-heading"><div class="tutorial-intro"><span id="tutorialStep" class="tutorial-step">ШАГ 1/4</span><a class="field-jump" href="#helperSlot">К полю ↑</a><h2 id="tutorialTitle">Разбери завал</h2></div><button id="tutorialSkip" class="tutorial-skip" type="button">Пропустить</button><button id="tutorialAction" class="gold" type="button" hidden>Далее</button></div><p id="tutorialText" aria-live="polite"></p></section>
+<section class="battle-guide" aria-label="Памятка партии"><div><span class="tutorial-step">ПАМЯТКА ПАРТИИ</span><a class="field-jump" href="#helperSlot">К полю ↑</a></div><p>Удерживай коробку и тяни к соседней или нажми на две подряд. Совпадать должны и цвет, и знак.</p><p class="guide-extra guide-gold">Четыре в ряд дают бонусную посылку.</p><p class="guide-extra guide-returns">Возвраты отправляются из нижнего ряда.</p><p class="guide-extra guide-obstacles">Тройка рядом по стороне убирает порчу и связанные.</p></section>
+</div>
+<div class="helper-slot" id="helperSlot"><section class="helpers" id="helpers" hidden aria-label="Помощники"><span class="helper-label">ПОМОЩНИКИ · БЕЗ РАСХОДА ХОДА</span><button id="mouse" class="tool" aria-pressed="false" title="Выбери мышку, затем обычную коробку"><canvas id="mouseIcon" width="56" height="56" aria-hidden="true"></canvas><span class="tool-copy"><b>Мышка</b><small>Убирает обычную коробку</small></span><span class="tool-charge" id="mouseCount" aria-label="Осталось зарядов">1</span></button><button id="moth" class="tool" aria-pressed="false" title="Выбери моль, затем испорченную или связанную коробку"><canvas id="mothIcon" width="56" height="56" aria-hidden="true"></canvas><span class="tool-copy"><b>Моль</b><small>Убирает порчу или связанную</small></span><span class="tool-charge" id="mothCount" aria-label="Осталось зарядов">1</span></button></section><div class="helper-placeholder"><span class="placeholder-icon" aria-hidden="true">▧</span><div><b>Помощники</b><small class="battle-placeholder">Появятся в третьей партии — «Завал».</small><small class="training-placeholder">На этом шаге помощники не требуются.</small></div></div></div>
+<footer class="controls"><div id="message" class="message" aria-live="polite">Собери три одинаковые коробки по цвету и фигуре.</div><div id="campaignSaveStatus" role="status" hidden></div><button id="hint" class="gold">Подсказка</button><button id="restart">Заново</button><button id="campaignRetrySave" class="gold" type="button" hidden>Повторить сохранение</button><button id="campaignExit" type="button" hidden>Вернуться в ПВЗ</button></footer>
+<details class="fine-guide"><summary>Как играть?</summary><ul><li>Удерживай коробку и тяни к соседней или нажми на две соседние. Для тройки должны совпасть и цвет коробки, и фигура.</li><li>Возврат отправляется, когда достигает нижнего ряда.</li><li>Порча и связанные коробки уходят при совпадении рядом по стороне. Эти коробки нельзя менять местами.</li><li>Мышка убирает выбранную обычную коробку, моль — порчу или связанную. Каждый помощник используется один раз и не расходует ход.</li><li>Бонусная посылка и обычная коробка удаляют с поля коробки того же цвета и фигуры.</li></ul></details>
+</div>
+</main>
+<script src="model.js"></script><script src="checkpoint.js"></script><script src="i18n.js"></script><script src="game.js"></script><script src="campaign-bridge.js"></script></body></html>

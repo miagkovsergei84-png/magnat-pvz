@@ -114,7 +114,7 @@ globalThis.PptStoryContent = (() => {
         entry('Игрок', portrait.player, 'В почтовой конторе мне нравятся мансардные окна. При таком свете я буду брать коробки с полок на 15% быстрее.'),
         entry('Тётя Анна', portrait.anna, 'У почтового амбара есть подъёмник. Раз за рейс им можно отправить одну обычную коробку из фургона прямо на её полку. Даже с полной тележкой!'),
         entry('Игрок', portrait.player, 'А у дома с садом вода с крыши идёт в бочку для полива. В дождливую смену сад прибавит 0,2 звезды к рейтингу.'),
-        entry('Тётя Анна', portrait.anna, 'Сегодня выбирай только крышу. Когда дойдём до окон, можешь попробовать другой стиль. Дом-то твой!')
+        entry('Тётя Анна', portrait.anna, 'Сегодня выбирай только крышу. Для окон можно взять тот же стиль и начать набор, а можно попробовать другой стиль. Дом-то твой!')
       ],
       en: [
         entry('Aunt Anna', portrait.anna, 'That’s the storeroom cleared! Now for the roof. Whichever way we fix it, the wall will stay dry. I found five ways to do it.'),
@@ -123,7 +123,81 @@ globalThis.PptStoryContent = (() => {
         entry('You', portrait.player, 'I like the skylights on the Post Office roof. With that much daylight, I’d pick parcels off the shelves 15% faster.'),
         entry('Aunt Anna', portrait.anna, 'The Parcel Barn has a hoist. Once per delivery, it sends one regular parcel straight from the van to its shelf. Even if your cart’s full!'),
         entry('You', portrait.player, 'And the Garden House collects rain from the roof in a barrel for watering. The garden adds 0.2 stars to our rating on rainy shifts.'),
-        entry('Aunt Anna', portrait.anna, 'You only need to pick a roof today. When it’s time to do the windows, you can try another style. It’s your house!')
+        entry('Aunt Anna', portrait.anna, 'You only need to pick a roof today. For the windows, you can keep the same style and start a set, or try another style. It’s your house!')
+      ]
+    },
+    // One conversation before each of the later repairs. The last line hands
+    // over to the repair card, where options in an earlier style carry a star.
+    village_repair_walls: {
+      ru: [
+        entry('Тётя Анна', portrait.anna, 'Две смены под новой крышей, и ни одной мокрой коробки! Только из рам всё ещё дует. Гости в очереди ёжатся и теряют терпение быстрее.'),
+        entry('Игрок', portrait.player, 'Значит, пора браться за окна и стены. Могу сам сделать полку у окна: отложу туда две коробки и выдам их прямо от стойки.'),
+        entry('Тётя Анна', portrait.anna, 'А я бы сложила тёплую печку. В дождь и зимой гости первые 20 секунд ждут у неё без потери терпения.'),
+        entry('Игрок', portrait.player, 'Ещё есть широкие ворота: каждый фургон простоит на разгрузке на 30 секунд дольше. Или полка обмена: соседи заберут каждый пятый возврат и заплатят $2.'),
+        entry('Тётя Анна', portrait.anna, 'И вот что я заметила: когда дом сделан в одном стиле, люди останавливаются полюбоваться. Возьмёшь для окон стиль крыши — начнётся набор.'),
+        entry('Рассказчик', portrait.narrator, 'Каждая деталь набора после первой приносит в кассу $5 в конце каждой смены. В карточке ремонта такие варианты отмечены звездой.')
+      ],
+      en: [
+        entry('Aunt Anna', portrait.anna, 'Two shifts under the new roof, and not one wet box! But there’s still a draft from the window frames. People in line are shivering and losing patience faster.'),
+        entry('You', portrait.player, 'Then it’s time for the windows and walls. I could build a counter shelf myself. I’d set two parcels aside there and hand them out right at the counter.'),
+        entry('Aunt Anna', portrait.anna, 'I’d build a warm stove. In rain or winter, guests by the stove keep their patience for the first 20 seconds.'),
+        entry('You', portrait.player, 'There are freight doors, too. Each van would stay 30 seconds longer for unloading. Or an exchange shelf: the neighbors take every fifth return and pay $2 for it.'),
+        entry('Aunt Anna', portrait.anna, 'And here’s something I’ve noticed. When a house is done in one style, people stop to admire it. Use the roof’s style for the windows, and you’ll start a set.'),
+        entry('Narrator', portrait.narrator, 'Every matching piece after the first adds $5 to the cash at the end of each shift. On the repair card, those options are marked with a star.')
+      ]
+    },
+    village_repair_floor: {
+      ru: [
+        entry('Лёва', portrait.leo, 'Чуть тележку в пролом не уронил! Три дыры в полу, и каждую приходится объезжать.'),
+        entry('Маша', portrait.maya, 'А я младшего за руку держу, пока стоим в очереди. Шаг в сторону — и нога уже в подполе.'),
+        entry('Игрок', portrait.player, 'Всё, берёмся за пол и заделываем все три пролома. Под фанерной заплатой можно устроить тайник: раз в смену там найдётся от $5 до $20.'),
+        entry('Лёва', portrait.leo, 'А ты разметь дорожку, как у нас на складе. По ней ходят на 10% быстрее. Или сделай погреб под люком: туда встанут три посылки.'),
+        entry('Маша', portrait.maya, 'Мне бы детский коврик. Пока малыши играют, родители готовы ждать на 20 секунд дольше.'),
+        entry('Лёва', portrait.leo, 'Только про набор не забудь. Что в одном стиле с прошлыми ремонтами, то со звездой, и в кассе за это прибавка.')
+      ],
+      en: [
+        entry('Leo', portrait.leo, 'I nearly dropped my cart through a hole! There are three of them in this floor, and I have to steer around every one.'),
+        entry('Maya', portrait.maya, 'I hold my little one’s hand the whole time we’re in line. One step to the side and your foot’s in the crawl space.'),
+        entry('You', portrait.player, 'Right, the floor is next. We’ll patch all three holes. Under a plywood patch, I could keep a cache and find $5–20 there once per shift.'),
+        entry('Leo', portrait.leo, 'Mark out a walkway, like the one at our depot. You walk 10% faster on it. Or put a cellar under a hatch. That’s room for three parcels.'),
+        entry('Maya', portrait.maya, 'I’d love a play mat. While the little ones play, parents will wait 20 seconds longer.'),
+        entry('Leo', portrait.leo, 'Don’t forget your set, though. Anything in the same style as your earlier repairs has a star, and it brings in extra cash.')
+      ]
+    },
+    village_repair_lights: {
+      ru: [
+        entry('Рассказчик', portrait.narrator, 'Посреди выдачи в щитке опять щёлкнуло. Свет погас, касса замолчала, и очередь замерла в полутьме.'),
+        entry('Тётя Анна', portrait.anna, 'Этой проводке больше лет, чем мне! В темноте я свою посылку с пуговицами от чужой не отличу.'),
+        entry('Игрок', portrait.player, 'Меняем проводку целиком, чтобы пробки больше не выбивало. А светильники выберем. Гирлянда в праздничную смену даст по $2 за каждую выданную посылку.'),
+        entry('Тётя Анна', portrait.anna, 'А мне по душе абажуры и радио. Утром включишь бодрую музыку и будешь ходить на 10% быстрее. Под спокойную гости подождут на 10% дольше.'),
+        entry('Игрок', portrait.player, 'Солнечная панель тоже хороша: в солнечную смену содержание дома дешевле на 20%. А табло вызова само позовёт гостя с короной к свободному окну.'),
+        entry('Тётя Анна', portrait.anna, 'Уже четвёртый ремонт! Посмотри, какого стиля у нас больше. Чем длиннее набор, тем больше прибавка в кассе.')
+      ],
+      en: [
+        entry('Narrator', portrait.narrator, 'In the middle of a busy hour, the fuse box clicked again. The lights went out, the register went quiet, and the line froze in the gloom.'),
+        entry('Aunt Anna', portrait.anna, 'This wiring is older than I am! In the dark I can’t tell my parcel of buttons from anyone else’s.'),
+        entry('You', portrait.player, 'We’ll replace all the wiring, so the breakers stop tripping. Then we pick the lights. Festive lights earn an extra $2 for every parcel handed out on a holiday shift.'),
+        entry('Aunt Anna', portrait.anna, 'I’d love lamps and a radio. Put on lively music in the morning, and you’ll move 10% faster. Calm music makes guests wait 10% longer.'),
+        entry('You', portrait.player, 'A solar panel is good, too. On sunny shifts, house upkeep costs 20% less. And a priority display calls a guest with a crown to the next free window.'),
+        entry('Aunt Anna', portrait.anna, 'That’s our fourth repair already! See which style we have the most of. The bigger the set, the more extra cash it brings.')
+      ]
+    },
+    village_repair_yard: {
+      ru: [
+        entry('Лёва', portrait.leo, 'У калитки бурьян по пояс, на дорожке старые доски. Часть людей доходит до забора, решает, что закрыто, и поворачивает назад.'),
+        entry('Тётя Анна', portrait.anna, 'Остался последний ремонт — фасад и двор. Расчистим вход, и гостей снова будет столько же, сколько обычно.'),
+        entry('Игрок', portrait.player, 'Хочу крыльцо со скамьёй: у крыльца гости первые 10 секунд ждут без потери терпения. Или ягодную лавку: варенье даст от $5 до $15 за смену.'),
+        entry('Лёва', portrait.leo, 'А мне бы второе место для фургона! Разгружаешь любую из двух машин, а вторая ждёт своей очереди.'),
+        entry('Тётя Анна', portrait.anna, 'Если весь дом выйдет в одном стиле, будет полный набор, пять из пяти. Вот тогда соседи точно придут посмотреть!'),
+        entry('Рассказчик', portrait.narrator, 'Это был последний ремонт. После двух смен в готовом доме можно было думать о переезде в городок.')
+      ],
+      en: [
+        entry('Leo', portrait.leo, 'The weeds by the gate are waist-high, and old boards cover the path. Some people get as far as the fence, think you’re closed and turn back.'),
+        entry('Aunt Anna', portrait.anna, 'Just one repair left: the front of the house and the yard. Once we clear the entrance, we’ll get as many visitors as usual again.'),
+        entry('You', portrait.player, 'I’d like a porch bench. Guests at the porch keep their patience for the first 10 seconds. Or a jam stall. Jam sales would bring in $5–15 each shift.'),
+        entry('Leo', portrait.leo, 'I’d like a second loading space! You can unload either of two vans, and the second one waits its turn.'),
+        entry('Aunt Anna', portrait.anna, 'If the whole house ends up in one style, that’s a full set, five out of five. Then the neighbors will definitely come to see it!'),
+        entry('Narrator', portrait.narrator, 'This was the last repair. After two shifts in the finished house, you could start thinking about the move to town.')
       ]
     },
     village_town_offer: {
@@ -156,14 +230,14 @@ globalThis.PptStoryContent = (() => {
       ru: [
         entry('Лёва', portrait.leo, 'Вот и рынок. Знакомься, это Илья. Илья, а вот и команда из деревни! Куда подъехать с коробками?'),
         entry('Илья', portrait.eli, 'Привет! Я здесь живу, по ту сторону площади. Видишь дверь у фонтана? Туда и заходите. Лёв, а фургону удобнее со двора.'),
-        entry('Игрок', portrait.player, 'Как думаешь, откуда лучше видно вывеску? Хочется, чтобы люди нашли нас даже с двумя полными сумками в руках.'),
+        entry('Игрок', portrait.player, 'Помещение теперь наше! Как думаешь, откуда лучше видно вывеску? Хочется, чтобы люди нашли нас даже с двумя полными сумками в руках.'),
         entry('Илья', portrait.eli, 'От остановки. Сюда на рынок приезжают из окрестных деревень. Встань у лавочки, а я подержу вывеску. Видно?'),
         entry('Рассказчик', portrait.narrator, 'Вывеску было видно даже с дальнего конца площади. Лёва вернулся к своим доставкам, а вы с коллегой из деревни открыли двери.')
       ],
       en: [
         entry('Leo', portrait.leo, 'Here’s the market. I’d like you to meet Eli. Eli, this is the crew from the village! Where should I pull up?'),
         entry('Eli', portrait.eli, 'Hi! I live just across the square. See that door by the fountain? That’s your way in. Leo, it’s easier to unload out back.'),
-        entry('You', portrait.player, 'Where do you think we should hang the sign? I’d like people to spot us even with both arms full of groceries.'),
+        entry('You', portrait.player, 'The premises are ours now! Where should we hang the sign? I’d like people to spot us even with both arms full of groceries.'),
         entry('Eli', portrait.eli, 'People take the bus here from all the villages around town. Try that bench by the bus stop. I’ll hold up the sign. Can you see it?'),
         entry('Narrator', portrait.narrator, 'You could read it from the far end of the square. Leo went back to his deliveries, and you and your coworker from the village opened the doors.')
       ]
@@ -196,6 +270,14 @@ globalThis.PptStoryContent = (() => {
         entry('Leo', portrait.leo, 'Will do. Keep that rating up: people at the market are talking about your place, and so far it’s all good.')
       ]
     },
+    town_basement_1:{ru:[entry('Илья',portrait.eli,'Слышишь шуршание? Под магазином старый подвал. Давно никто туда не спускался.'),entry('Игрок',portrait.player,'Похоже, забытые посылки решили сами выйти на прогулку. Спустимся и вернём их на место!')],en:[entry('Eli',portrait.eli,'Hear that rustling? There is an old basement below the shop. Nobody has been down there for years.'),entry('You',portrait.player,'Looks like some forgotten parcels went for a walk. Let’s bring them back!')]},
+    town_repair_1:{ru:[entry('Илья',portrait.eli,'Коридор свободен! Теперь у нас собственное помещение, и мы можем постепенно его улучшать. Каждый ремонт даст нам новое преимущество в работе.'),entry('Игрок',portrait.player,'Начнём со входа: уютная скамья для гостей, экспресс-окно или приоритет возвратов. Выберем то, что лучше подойдёт нашему ПВЗ.')],en:[entry('Eli',portrait.eli,'The corridor is clear! Now that we own the premises, we can improve them step by step. Every renovation will give us a new advantage at work.'),entry('You',portrait.player,'Let’s start with the entrance: a cozy bench for visitors, an express counter, or returns priority. We’ll choose what suits our pickup point best.')]},
+    town_repair_2:{ru:[entry('Илья',portrait.eli,'У стойки всё больше заказов. Проверочный стол сбережёт от ошибок, терминал поможет выбрать гостя, а стол комплектования — собрать заказы.'),entry('Игрок',portrait.player,'Выберем, что подходит нашему стилю работы.')],en:[entry('Eli',portrait.eli,'Orders are piling up. A checking desk prevents mistakes, a call terminal locates customers, and a packing table helps collect orders.'),entry('You',portrait.player,'Let’s choose what suits our working style.')]},
+    town_basement_2:{ru:[entry('Лёва',portrait.leo,'Привёз фонарь. За дальней дверью целый склад, но там кто-то таскает коробки.'),entry('Игрок',portrait.player,'Наверное, мыши и моль. Зажжём свет и вернём потерянные посылки.')],en:[entry('Leo',portrait.leo,'I brought a lantern. There is a storeroom behind the far door, but someone is dragging boxes around.'),entry('You',portrait.player,'Probably mice and moths. Let’s turn on the lights and save the parcels.')]},
+    town_repair_3:{ru:[entry('Илья',portrait.eli,'Столько свободного места! Можно сохранить заказы на завтра, поставить полку у стойки или освободить пол грузовой клеткой.'),entry('Игрок',portrait.player,'Хорошо, теперь выберем, как использовать подвал.')],en:[entry('Eli',portrait.eli,'So much space! We could save orders overnight, add a quick-access shelf, or clear the floor with a cargo cage.'),entry('You',portrait.player,'Let’s decide how to use the basement.')]},
+    town_repair_4:{ru:[entry('Лёва',portrait.leo,'Возвраты снова мешают пройти. Сделаем отдельный стол, стойку или секции под следующую доставку?'),entry('Игрок',portrait.player,'Нужно организовать возвраты так, чтобы не загромождать проходы.')],en:[entry('Leo',portrait.leo,'Returns are blocking the passages again. A special desk, a rack, or outbound compartments?'),entry('You',portrait.player,'Let’s organize returns without cluttering the walkways.')]},
+    town_basement_3:{ru:[entry('Лёва',portrait.leo,'Остался последний отсек — старая упаковочная. Видел, как одна коробка моргнула!'),entry('Игрок',portrait.player,'Ого, мимики! Включим лампы, достанем посылки и не будем подходить слишком близко.')],en:[entry('Leo',portrait.leo,'One room left — the old packing room. I swear one box winked at me!'),entry('You',portrait.player,'Mimics! Let’s switch on the lamps, save the parcels, and keep our distance.')]},
+    town_repair_5:{ru:[entry('Игрок',portrait.player,'Подвал расчищен, даже нашли старую вывеску! Осталось благоустроить двор.'),entry('Илья',portrait.eli,'Навес поможет гостям, доска — подготовиться к доставке, а тележка — разгружать фургон. Решать тебе.')],en:[entry('You',portrait.player,'The basement is clear, and we even found the old sign! Only the yard remains.'),entry('Eli',portrait.eli,'A porch helps customers, a dispatch board helps planning, and a cart helps unloading. Your choice.')]},
     town_final: {
       ru: [
         entry('Илья', portrait.eli, 'Сегодня у фонтана меня спросили, где ваш пункт. Я даже рта не успел открыть, а трое прохожих уже показали на вашу дверь.'),
@@ -236,6 +318,20 @@ globalThis.PptStoryContent = (() => {
         entry('You', portrait.player, 'Deal! We’ll reach 4.8 stars, then look forward to your visit.')
       ]
     },
+    city_courier_intro: {
+      ru: [
+        entry('Ника', portrait.nika, 'Выручишь? Четыре посылки нужно развезти по пунктам выдачи. На одних улицах пробки, другие и вовсе перекрыты.'),
+        entry('Игрок', portrait.player, 'Сначала отмечу на карте все четыре адреса. Потом возьму рюкзак и побегу по маршруту.')
+      ],
+      en: [
+        entry('Nika', portrait.nika, 'Could you help me out? Four parcels need to reach their pickup points. Some streets are jammed, and others are closed.'),
+        entry('You', portrait.player, 'I’ll mark all four addresses on the map first. Then I’ll grab my backpack and run the route.')
+      ]
+    },
+    city_courier_done: {
+      ru: [entry('Ника', portrait.nika, 'Все четыре посылки на месте. Спасибо! Я приму их в системе, а ты можешь вернуться в свой пункт.')],
+      en: [entry('Nika', portrait.nika, 'All four parcels made it. Thanks! I’ll check them in while you get back to your pickup point.')]
+    },
     city_technology: {
       ru: [
         entry('Ника', portrait.nika, 'Техника не стоит на месте. Уже появляются роботы-сортировщики и искусственный интеллект для пунктов выдачи.'),
@@ -270,14 +366,14 @@ globalThis.PptStoryContent = (() => {
         entry('Игрок', portrait.player, 'Здесь людей ещё больше. Как сделать так, чтобы очередь не мешала тем, кто пришёл за одной посылкой?'),
         entry('Ника', portrait.nika, 'Рядом с посетителями можно поставить постамат. Курьер сам загрузит назначенные заказы, а клиенты заберут свои.'),
         entry('ИИ', portrait.narrator, 'Если ячеек не хватит, заказ попадёт к обычному окну. Постамат можно купить в магазине — попробуем первую выдачу?'),
-        entry('Игрок', portrait.player, 'Давай! Проведём две смены в центре и посмотрим, как работает постамат.')
+        entry('Игрок', portrait.player, 'Поработаем две смены в центре. Если у окон начнёт собираться очередь, подумаем о постамате.')
       ],
       en: [
         entry('Nika', portrait.nika, 'We did well on the outskirts. Here is our new place downtown — the team, equipment and parcels are already here.'),
         entry('You', portrait.player, 'There are even more people here. How can we keep the line from slowing down someone collecting a single parcel?'),
         entry('Nika', portrait.nika, 'We can put a parcel locker near the customers. A courier loads assigned orders, and customers collect their own.'),
         entry('AI', portrait.narrator, 'If there are no free compartments, the order goes to a regular window. You can buy the locker in the shop. Shall we try a pickup?'),
-        entry('You', portrait.player, 'Let’s do it! We’ll run two shifts downtown and see how the locker works.')
+        entry('You', portrait.player, 'Let’s run two shifts downtown. If the lines build up, we can add a locker.')
       ]
     },
     city_departure: {
@@ -290,6 +386,28 @@ globalThis.PptStoryContent = (() => {
         entry('Nika', portrait.nika, 'People across the neighborhood know our pickup point now. A place has opened up in the capital — want to try it?'),
         entry('You', portrait.player, 'Let’s go! We’ll leave the city point in good hands and take one employee with us.'),
         entry('AI', portrait.narrator, 'I’ll stay in touch. Our next challenge is learning to run a network.')
+      ]
+    },
+    city_sorting_intro: {
+      ru: [
+        entry('Ника', portrait.nika, 'Перед отъездом в столицу выручишь наш сортировочный центр? Остались обычные посылки, возвраты и несколько завалов.'),
+        entry('ИИ', portrait.narrator, 'Собирай совпадающие коробки по цвету и знаку. В каждой из трёх партий сначала можно потренироваться, а затем выполнить настоящие задачи.'),
+        entry('Игрок', portrait.player, 'Разберём всё, чтобы поездка в столицу началась без незаконченных дел.')
+      ],
+      en: [
+        entry('Nika', portrait.nika, 'Before we leave for the capital, can you help our sorting centre? We still have ordinary parcels, returns and a few piles to clear.'),
+        entry('AI', portrait.narrator, 'Match parcels by colour and symbol. Each of the three rounds begins with practice, then you can complete the real objectives.'),
+        entry('You', portrait.player, 'Let’s get everything sorted so we can leave for the capital with no unfinished business.')
+      ]
+    },
+    city_sorting_done: {
+      ru: [
+        entry('Ника', portrait.nika, 'Отлично! Все три партии завершены: посылки отсортированы, возвраты отправлены, а завалы разобраны.'),
+        entry('ИИ', portrait.narrator, 'Теперь можно спокойно отправляться в столицу. Выбери сотрудника, который поедет с тобой.')
+      ],
+      en: [
+        entry('Nika', portrait.nika, 'Excellent! All three rounds are complete: the parcels are sorted, returns sent and piles cleared.'),
+        entry('AI', portrait.narrator, 'Now we can head to the capital. Choose the employee who will come with you.')
       ]
     },
     capital_arrival: {

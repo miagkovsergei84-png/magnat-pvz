@@ -300,21 +300,17 @@ globalThis.PptVillageHouseArt=(()=>{
     ctx.restore();
     if(picture(preview(home.house,4,home.choices[4])))canvas.dataset.ready='true';
   }
-  // Openings in the street-facing wall of each painted house (fractions of the
-  // square exterior). The railway house has a wider front after the yard work.
-  const serviceBays={
-    linden:[.116,.504,.432,.128,.006],
-    bakery:[.690,.551,.175,.137,.005],
-    station:[.444,.502,.302,.104,.014],
-    stationWide:[.346,.528,.449,.129,.009]
-  };
   const repairedWindows={
     linden:[[.105,.44,.487,.22]],
     bakery:[[.10,.435,.197,.234]],
     station:[[.110,.465,.122,.145],[.797,.494,.11,.126]]
   };
   function windowDonor(home){
-    if(!home.choices[1]||home.choices[4])return '';
+    if(!home.choices[1])return '';
+    // After the yard work the linden and bakery fronts keep the same window
+    // openings, so the windows chosen at repair II stay. The finished railway
+    // plates frame the windows differently and keep their own.
+    if(home.choices[4]&&(home.house==='station'||home.choices[4]===home.choices[1]))return '';
     // The later railway yards move the entire front gable. Its original
     // frame matches the early restoration plate until that work is done.
     const style=home.house==='station'?'diy':home.choices[1];
@@ -331,30 +327,6 @@ globalThis.PptVillageHouseArt=(()=>{
     c.restore();
     c.globalCompositeOperation='destination-in';c.filter='blur(2px)';c.fillStyle='#fff';c.fillRect(3,3,iw-6,ih-6);
     ctx.drawImage(stamp,x,y,w,h);
-  }
-  function drawServiceBay(ctx,home){
-    if(!home.choices[1])return;
-    const wall=picture(preview(home.house,1,home.choices[1]));
-    if(!wall)return;
-    const yard=levelStyle(home.choices[4]);
-    const [x,y,w,h,slope]=serviceBays[home.house==='station'&&yard>=3?'stationWide':home.house];
-    // Work in a 360-unit-wide shop opening. The original jambs, gable and
-    // porch stay in front of the house. The floor recedes behind the sill.
-    ctx.save();ctx.transform(w/360,slope/360,0,h/152,x,y);
-    ctx.fillStyle='#483326';ctx.fillRect(-3,-4,366,161);
-    ctx.fillStyle='#a17c53';ctx.fillRect(-2,153,364,5);
-    ctx.beginPath();ctx.rect(0,0,360,152);ctx.clip();
-    paintWall(ctx,home,0,116,null,1);
-    const floor=picture(preview(home.house,2,home.choices[2]));
-    if(floor){
-      const sy=home.choices[2]==='barn'?Math.floor(floor.naturalHeight*.70):0;
-      const sh=Math.min(floor.naturalHeight-sy,Math.round(floor.naturalHeight*.30));
-      ctx.drawImage(floor,0,sy,floor.naturalWidth,sh,0,116,360,36);
-    }
-    const shade=ctx.createLinearGradient(0,0,0,152);
-    shade.addColorStop(0,'rgba(38,23,12,.38)');shade.addColorStop(.24,'rgba(38,23,12,.09)');
-    shade.addColorStop(1,'rgba(38,23,12,.18)');ctx.fillStyle=shade;ctx.fillRect(0,0,360,152);
-    ctx.restore();
   }
   const villageLandscape='assets/campaign/wallpaper-village.jpg';
   // The original roof masks end above the low eave. Cover the remaining
@@ -431,7 +403,8 @@ globalThis.PptVillageHouseArt=(()=>{
     const windows=windowDonor(home);
     const donor=windows&&picture(windows);
     if(donor)for(const rect of repairedWindows[home.house])featheredDetail(ctx,donor,rect);
-    drawServiceBay(ctx,home);
+    // The street front keeps its own windows. Interior repairs (walls, floor,
+    // lights) are shown only in the room below the exterior, never as a cut-out.
     const roof=roofPlate(home);
     if(roof)ctx.drawImage(roof,0,0,1,1);
     if(home.choices[3]==='garden'){

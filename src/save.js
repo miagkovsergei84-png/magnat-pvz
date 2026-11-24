@@ -14,7 +14,7 @@ globalThis.PptSave = (() => {
     for (const name of ['up','perm']) {
       if (name in state && (!state[name] || typeof state[name] !== 'object' || Array.isArray(state[name]))) throw new Error('Invalid branch ' + name);
     }
-    const maxLevels = {shoes:3,cart:2,scanner:1,mop:1,gloves:1,staffroom:2,queue:2,shelves:2,conveyor:1,returns:1,warehouse:1,locker:1,robot:1,tune:1,ai:2,brand:5,cooler:1,coffee:1,tv:1};
+    const maxLevels = {shoes:3,cart:2,scanner:1,coldspace:1,xlcart:1,mop:1,gloves:1,staffroom:2,queue:2,shelves:2,conveyor:1,returns:1,warehouse:1,locker:1,robot:1,tune:1,ai:2,brand:5,cooler:1,coffee:1,tv:1};
     if (state.up && Object.entries(state.up).some(([name,level]) => name in maxLevels && (!Number.isInteger(level) || level < 0 || level > maxLevels[name]))) throw new Error('Invalid branch upgrade');
     if ('reviews' in state && (!state.reviews.length || state.reviews.some(x => !Number.isFinite(x) || x < 1 || x > 5))) throw new Error('Invalid branch reviews');
     if ('storyQueueEligible' in state && typeof state.storyQueueEligible !== 'boolean') throw new Error('Invalid story eligibility');
@@ -23,7 +23,8 @@ globalThis.PptSave = (() => {
     if ('stock' in state && (!dense(state.stock) || state.stock.length !== 4 || state.stock.some(row => !dense(row) || row.length !== 4 || row.some(cell => !dense(cell))))) throw new Error('Invalid branch stock');
     if ('floor' in state && (state.floor.length !== 24 || state.floor.some(cell => !dense(cell)))) throw new Error('Invalid branch floor');
     if ('big' in state && (state.big.length !== 4 || state.big.some(cell => !dense(cell)))) throw new Error('Invalid branch big-parcel storage');
-    for (const name of ['fridge','locker']) if (name in state && state[name].length !== 6) throw new Error('Invalid branch ' + name);
+    if ('fridge' in state && ![3,6].includes(state.fridge.length)) throw new Error('Invalid branch fridge');
+    if ('locker' in state && state.locker.length !== 6) throw new Error('Invalid branch locker');
     if ('autoLocker' in state) {
       const locker=state.autoLocker;
       if (!locker || typeof locker!=='object' || locker.version!==1 || state.up?.locker!==1 ||
@@ -129,6 +130,34 @@ globalThis.PptSave = (() => {
     if (!value || typeof value !== 'object' || value.version !== 1 || !Number.isFinite(value.cash) || !Array.isArray(value.branches) || value.branches.length < 1 || value.branches.length > 2)
       throw new Error('Invalid network save');
     if ('villageHome' in value) PptVillageHome.validate(value.villageHome);
+    if ('townHome' in value) {
+      if(!globalThis.PptTownRenovation||value.campaign?.chapter!=='town')throw new Error('Town renovation outside town');
+      PptTownRenovation.validate(value.townHome);
+      if(value.townHome.startShift>value.campaign.shifts||value.townHome.choices.length>value.campaign.shifts-value.townHome.startShift||value.townHome.finishedAt>value.campaign.shifts)throw new Error('Invalid town repair dates');
+      if(value.townHome.arcade&&value.storyPresentation?.type!=='townBasement')throw new Error('Arcade checkpoint outside basement');
+    }
+    if ('cityCourier' in value) {
+      const task=value.cityCourier;
+      if(value.campaign?.chapter!=='city'||!task||typeof task!=='object'||Array.isArray(task)||typeof task.complete!=='boolean'||
+        Object.keys(task).some(k=>!['complete','checkpoint'].includes(k))||
+        (task.complete&&Object.hasOwn(task,'checkpoint'))||(!task.complete&&!Object.hasOwn(task,'checkpoint')))
+        throw new Error('Invalid city delivery progress');
+      if(!task.complete&&task.checkpoint!==null){
+        if(!globalThis.CourierCheckpoint)throw new Error('City delivery rules unavailable');
+        CourierCheckpoint.validate(task.checkpoint);
+      }
+    }
+    if ('cityMatchThree' in value) {
+      const task=value.cityMatchThree;
+      if(value.campaign?.chapter!=='city'||value.campaign.status!=='complete'||!task||typeof task!=='object'||Array.isArray(task)||typeof task.complete!=='boolean'||
+        Object.keys(task).some(k=>!['complete','checkpoint'].includes(k))||
+        (task.complete&&Object.hasOwn(task,'checkpoint'))||(!task.complete&&!Object.hasOwn(task,'checkpoint')))
+        throw new Error('Invalid city sorting progress');
+      if(!task.complete&&task.checkpoint!==null){
+        if(!globalThis.PptMatchThreeCheckpoint)throw new Error('City sorting rules unavailable');
+        PptMatchThreeCheckpoint.validate(task.checkpoint);
+      }
+    }
     if ('villageOfferDay' in value && (!Number.isSafeInteger(value.villageOfferDay)||value.villageOfferDay<5)) throw new Error('Invalid house offer date');
     if ('villageRentFromDay' in value && (!Number.isSafeInteger(value.villageRentFromDay)||value.villageRentFromDay<6)) throw new Error('Invalid rent increase date');
     if ('villageRenovation' in value && value.villageRenovation!==1) throw new Error('Invalid village renovation version');
@@ -140,7 +169,7 @@ globalThis.PptSave = (() => {
     if ('manualPaused' in value && typeof value.manualPaused !== 'boolean') throw new Error('Invalid network manual pause');
     if ('storyCampaign' in value && typeof value.storyCampaign !== 'boolean') throw new Error('Invalid story campaign flag');
     // Interludes already shown in this campaign; optional in older saves.
-    if ('storySeen' in value && (!value.campaign || !Array.isArray(value.storySeen) || value.storySeen.length > 50 || !globalThis.PptStoryContent ||
+    if ('storySeen' in value && (!value.campaign || !Array.isArray(value.storySeen) || value.storySeen.length > 100 || !globalThis.PptStoryContent ||
         value.storySeen.some(id => typeof id !== 'string' || !PptStoryContent.ids.includes(id)) || new Set(value.storySeen).size !== value.storySeen.length))
       throw new Error('Invalid story history');
     if ('journeyGuide' in value && !['map','map_view','shop','team','return_shop','shop_intro','earn','done'].includes(value.journeyGuide)) throw new Error('Invalid journey tutorial state');
@@ -159,9 +188,31 @@ globalThis.PptSave = (() => {
     if ('away' in value) throw new Error('Away shift cannot be saved');
     if ('storyPresentation' in value) {
       const p=value.storyPresentation;
-      if (!value.campaign || !p || typeof p!=='object' || Array.isArray(p) || !['scene','choose','retryNotice','finished','villageInstall'].includes(p.type)) throw new Error('Invalid story presentation');
+      if (!value.campaign || !p || typeof p!=='object' || Array.isArray(p) || !['scene','choose','retryNotice','finished','villageInstall','townBasement','townRepair','townInstall','cityCourier','cityMatchThree'].includes(p.type)) throw new Error('Invalid story presentation');
+      if(p.type==='cityCourier'&&(value.campaign.chapter!=='city'||value.campaign.status!=='active'||!value.cityCourier||value.cityCourier.complete||
+        value.campaign.shifts<1||value.activeId!==1||value.branches.some(branch=>branch.status==='play')))
+        throw new Error('Invalid city delivery presentation');
+      if(p.type==='scene'&&['city_courier_intro','city_courier_done'].includes(p.id)&&(value.campaign.chapter!=='city'||value.campaign.status!=='active'||
+        !value.cityCourier||value.cityCourier.complete!==(p.id==='city_courier_done')))
+        throw new Error('Invalid city delivery scene');
+      if(p.type==='cityMatchThree'&&(value.campaign.chapter!=='city'||value.campaign.status!=='complete'||!value.cityMatchThree||value.cityMatchThree.complete||
+        value.activeId!==1||value.branches.some(branch=>branch.status==='play')))
+        throw new Error('Invalid city sorting presentation');
+      if(p.type==='scene'&&['city_sorting_intro','city_sorting_done'].includes(p.id)&&(value.campaign.chapter!=='city'||value.campaign.status!=='complete'||
+        !value.cityMatchThree||value.cityMatchThree.complete!==(p.id==='city_sorting_done')))
+        throw new Error('Invalid city sorting scene');
+      // Legacy saves without a sorting record may still carry a city choose
+      // screen; the runtime migrates it to the finale. New incomplete sorting
+      // saves cannot present an employee choice before the required task.
+      if(p.type==='choose'&&value.campaign.chapter==='city'&&value.campaign.status==='complete'&&value.cityMatchThree&&!value.cityMatchThree.complete)
+        throw new Error('City sorting is not complete');
       if(p.type==='villageInstall'&&(value.campaign.chapter!=='village'||!value.villageHome?.cleared||!Number.isInteger(p.level)||
         p.level<1||p.level>5||p.level!==value.villageHome.choices.length))throw new Error('Invalid village installation');
+      if(['townBasement','townRepair','townInstall'].includes(p.type)){
+        if(value.campaign.chapter!=='town'||value.campaign.status!=='active'||!value.townHome)throw new Error('Invalid town presentation');
+        const work=PptTownRenovation.due(value.townHome,value.campaign.shifts);
+        if(p.type==='townBasement'&&(work?.kind!=='basement'||work.episode!==p.episode)||p.type==='townRepair'&&(work?.kind!=='repair'||work.level!==p.level)||p.type==='townInstall'&&(p.level!==value.townHome.choices.length||!Number.isInteger(p.level)||p.level<1||p.level>5))throw new Error('Invalid town work');
+      }
       if (p.type==='scene' && (!globalThis.PptStoryContent || !PptStoryContent.ids.includes(p.id) || !Number.isSafeInteger(p.step) || p.step<0 || p.step>=PptStoryContent.scene(p.id,'ru').length)) throw new Error('Invalid story scene');
       if (p.type==='retryNotice' && ['penalty','support','clearedDebt'].some(key=>!Number.isFinite(p[key])||p[key]<0)) throw new Error('Invalid retry notice');
     }
@@ -226,6 +277,10 @@ globalThis.PptSave = (() => {
       ids.add(branch.id);
     }
     if (!ids.has(1) || !ids.has(value.activeId) || typeof value.expansionUnlocked !== 'boolean') throw new Error('Invalid network metadata');
+    if(value.townHome){const branch=value.branches.find(b=>b.id===1),s=branch.state,g=branch.runtime,stored=new Set([...value.townHome.buffer,...value.townHome.returns,...value.townHome.dock]);
+      const elsewhere=[...(s.stock||[]).flat(2),...(s.floor||[]).flat(),...(s.big||[]).flat(),...(s.fridge||[]),...(s.locker||[]),...(g?.p?.hands||[]),...(g?.workers||[]).flatMap(w=>w.carry||[]),...(g?.truck?.cargo||[]),...(g?.townNextCargo||[])];
+      if(elsewhere.some(p=>stored.has(p)))throw new Error('Town parcel also in other storage');
+    }
     if (value.totals !== undefined && (!value.totals || typeof value.totals !== 'object' ||
         !Number.isSafeInteger(value.totals.days) || value.totals.days < 0 ||
         !Number.isSafeInteger(value.totals.served) || value.totals.served < 0 ||

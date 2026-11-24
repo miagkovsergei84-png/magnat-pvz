@@ -34,7 +34,7 @@ const KEY=PptSave.key,LKEY='ppt-lang';
 // A stamped test build can run a second game in the same tab. Its campaign
 // writes, including autosave and recovery, all go to its private slot.
 const campaignStorage=()=>globalThis.PptDebugSession?.storage ?? localStorage;
-function fresh(){return{day:1,cash:60,up:{},reviews:[5,4,5,4,5],heap:0,stock:[0,1,2,3].map(()=>[[],[],[],[]]),floor:FLOOR.map(()=>[]),evDay:0,ev:null,staff:[],cands:[],nid:1,perm:{pay:0,pat:0},card:null,cardOpts:[],cardDay:0,ctrOpts:[],ctrDay:0,contract:null,saleDay:0,big:[[],[],[],[]],fridge:Array(6).fill(null),locker:Array(6).fill(null)};}
+function fresh(){return{day:1,cash:60,up:{},reviews:[5,4,5,4,5],heap:0,stock:[0,1,2,3].map(()=>[[],[],[],[]]),floor:FLOOR.map(()=>[]),evDay:0,ev:null,staff:[],cands:[],nid:1,perm:{pay:0,pat:0},card:null,cardOpts:[],cardDay:0,ctrOpts:[],ctrDay:0,contract:null,saleDay:0,big:[[],[],[],[]],fridge:Array(3).fill(null),locker:Array(6).fill(null)};}
 function genCand(state=S){const used=new Set(state.staff.map(x=>x.n).concat(state.cands.map(x=>x.n)));let n;do{n=rnd(20);}while(used.has(n)&&used.size<20);
   return{id:state.nid++,n,trait:TRAITS[rnd(TRAITS.length)],spd:1+rnd(4),acc:1+rnd(4),lvl:1,xp:0,role:'sort'};}
 function wage(s){return Math.round((20+7*(s.spd+s.acc)+6*(s.lvl-1)+(s.trait==='careful'?10:s.trait==='fast'?8:0))*(s.trait==='rookie'?.6:1));}
@@ -104,6 +104,8 @@ const capCell=()=>[3,5,8][lv('shelves')];
 const depth=()=>1+lv('queue');
 function perksHome(){return globalThis.PptVillagePerks&&typeof activeVillageHome==='function'?activeVillageHome():null;}
 function housePerk(level,style){return perksHome()?.choices?.[level-1]===style;}
+function activeTownHome(){return !NETWORK?.away&&NETWORK?.campaign?.chapter==='town'&&branchRuntime?.current()?.id===1?NETWORK.townHome:null;}
+function townPerk(level,style){return globalThis.PptTownRenovation?.has(activeTownHome(),level,style)===true;}
 function housePowerOff(){return (G?.houseFaultUntil||0)>(G?.clock||0);}
 const stars=()=>Math.min(5,S.reviews.reduce((a,b)=>a+b,0)/S.reviews.length+(perksHome()?PptVillagePerks.rating(perksHome(),S.day,S.ev):0));
 // City starts with a smaller audience; the first story blogger visit removes
@@ -115,7 +117,9 @@ const winX=i=>(i+.5)*W/nWin();
 const aiWin=()=>lv('ai')?nWin()-1:-1;
 // Parcel generation and rack availability must use the same effective day.
 // Saved stock remains accessible even when an older save predates that day.
-const fridgeOn=()=>storyDifficultyDay(S.day)>=23||S.fridge.some(Boolean),bigOn=()=>storyDifficultyDay(S.day)>=21||S.big.some(stack=>stack.length>0),
+function cityFreight(){return ['city','capital'].includes(NETWORK?.campaign?.chapter);}
+function cityColdFreight(){return NETWORK?.campaign?.chapter==='capital'||(NETWORK?.campaign?.chapter==='city'&&NETWORK.campaign.shifts>=2);}
+const fridgeOn=()=>cityColdFreight()||storyDifficultyDay(S.day)>=23||S.fridge.some(Boolean),bigOn=()=>cityFreight()||storyDifficultyDay(S.day)>=21||S.big.some(stack=>stack.length>0),
   lockerOn=()=>!NETWORK?.campaign?lv('locker')>0:(mode==='play'&&G?.win?.[0]?.kind==='locker')||!!S.locker?.some(Boolean);
 function review(n){S.reviews.push(n);if(S.reviews.length>30)S.reviews.shift();}
 const rentFor=d=>Math.round(30+15*d+.15*d*d);
@@ -142,7 +146,7 @@ function storyDifficultyDay(day,state=S){
   return Math.max(1,Math.min(day-townStart+STORY_TOWN_BASE_DAY,STORY_TOWN_DAY_CAP));
 }
 function storyDayConfig(day,ev,card,state){
-  if(['city','capital'].includes(NETWORK?.campaign?.chapter))return baseDayConfig(storyDifficultyDay(day,state),ev,card,state);
+  if(cityFreight())return baseDayConfig(storyDifficultyDay(day,state),ev,card,state,{cityFreight:true,coldFreight:cityColdFreight()});
   if(!campaignTechLocked('robot'))return baseDayConfig(day,ev,card,state);
   return baseDayConfig(storyDifficultyDay(day,state),ev,card,{...state,up:{...state.up,robot:0,tune:0,ai:0}},{softRush:true});
 }
@@ -182,6 +186,7 @@ function newDay(deferSave=false){
   }
   if(NETWORK.campaign)G.campaignServed=0;
   if(NETWORK.away)G.awayChecks=0;
+  if(townPerk(5,'express')&&G.plan.length)G.townNextCargo=makeTruckCargo();
   const villageHome=perksHome();
   if(villageHome&&PptVillagePerks.begin(villageHome,G,S.day,ev)){
     mkWorker('load',{id:0,n:0,lvl:1,xp:0,spd:3,acc:5,role:'load',trait:'careful',temp:true});
@@ -335,6 +340,7 @@ function eachParcel(fn){
   for(const p of S.fridge)if(p)fn(p,'fridge');
   for(const p of S.locker)if(p)fn(p,'locker');
   if(perksHome())PptVillagePerks.eachStored(perksHome(),fn);
+  if(activeTownHome())PptTownRenovation.eachStored(activeTownHome(),fn);
   for(const p of G.p.hands)fn(p,'hands');
   for(const q of allCust())if(q.housePrepared)fn(q.housePrepared,'counter');
   for(const w of G.workers)for(const p of w.carry)fn(p,'hands');
@@ -402,7 +408,7 @@ function spawnCust(){
     if(PptCampaignLocker.startCustomer(S.autoLocker,G.autoLocker,customer))return true;
   }
   if(G.waitingChecks?.length)admitWaitingChecks(G,firstWin(),depth());
-  const c=G.cfg,best=openServiceWindow(G,firstWin(),depth());
+  const c=G.cfg;let best=openServiceWindow(G,firstWin(),depth());
   if(best<0)return false;
   const prime=Math.random()<c.prime,shirtRoll=Math.random();
   const cu={win:best,x:winX(best),y:-30,state:'in',prime,shirt:SHIRTS[Math.floor(shirtRoll*SHIRTS.length)],need:[],ret:null,claim:null,cod:Math.random()<c.cod,vip:null};
@@ -436,6 +442,12 @@ function spawnCust(){
     else if(!cyclist&&Math.random()<c.multi&&keys.length)cu.need.push(pick());
   }
   if(cu.ret&&cu.vip==='granny')cu.vip=null;
+  if(townPerk(1,'express')||townPerk(1,'logistics')){
+    const priority=firstWin(),preferred=townPerk(1,'express')?!cu.ret&&cu.need.length===1:!!cu.ret;
+    const available=G.q.map((line,i)=>({i,length:line.length})).filter(l=>l.i>=priority&&l.length<depth()).sort((a,b)=>a.length-b.length);
+    const order=preferred?(available.find(l=>l.i===priority)||available[0]):(available.find(l=>l.i!==priority)||(townPerk(1,'express')?null:available[0]));
+    if(!order)return false;best=order.i;cu.win=best;cu.x=winX(best);
+  }
   cu.shirt=chooseCustomerShirt(cu.shirt,cu.vip,shirtRoll);
   cu.max=c.pat*(prime?G.mod.primePat:1)*(cu.need.length>1?1.3:1)*(cu.vip==='granny'?1.8:cu.vip==='blogger'?.85:1);cu.pt=cu.max;
   if(home){
@@ -510,11 +522,17 @@ function payFor(cu,b){const M=G.mod,tip=cu.houseCyclist?0:4*M.tip*Math.max(0,cu.
 function give(cu,b,by){
   const i=cu.need.findIndex(n=>n.c===b.c&&n.s===b.s);
   if(i>=0&&!b.r){
-    cu.need.splice(i,1);const pay=payFor(cu,b)+(perksHome()?PptVillagePerks.extraPay(perksHome(),HOLIDAYS.includes(G.ev)):0);S.cash+=pay;G.st.revenue+=pay;G.st.served++;if(by){if(by.kind==='ai')G.st.byAi++;else G.st.byStaff++;}
+    if(townPerk(1,'cozy')&&cu.need.length>1&&!cu.townBenchUsed){cu.townBenchUsed=true;cu.pt+=12;cu.max+=12;}
+    cu.need.splice(i,1);const pay=payFor(cu,b)+(perksHome()?PptVillagePerks.extraPay(perksHome(),HOLIDAYS.includes(G.ev)):0);S.cash+=pay;G.st.revenue+=pay;G.st.served++;if(b.f)G.st.fragileServed=(G.st.fragileServed||0)+1;if(by){if(by.kind==='ai')G.st.byAi++;else G.st.byStaff++;}
     const before=mult();G.combo++;const m=mult();G.maxMult=Math.max(G.maxMult,m);
     queueFloat(cu,-30,message('earnedCash',pay),by?by.color:'#4cd18a');if(m>before)float(W/2,COUNTER_Y+48,message('fCombo',m),'#ff7a1a');
     if(!cu.need.length){review(cu.pt/cu.max>.5?5:4);if(cu.vip==='blogger'){for(let k=0;k<3;k++)review(5);queueFloat(cu,-46,message('fBlogGood'),'#ffd166');}leave(cu,true);return !!cu.cod;}
   }else{
+    if(townPerk(2,'cozy')&&!G.townMistakeSaved){
+      G.townMistakeSaved=true;
+      if(by&&Array.isArray(by.carry))by.carry.push(b);else if(!by){G.p.hands.push(b);G.p.act=G.p.hands.length-1;drawHands();}else putHome(b,cu.x,SERVE_Y);
+      queueFloat(cu,-30,lang==='ru'?'Проверено: без штрафа':'Checked: no penalty','#4cd18a');return false;
+    }
     S.cash-=10+G.mod.err;G.st.refunds+=10+G.mod.err;G.st.mistakes++;cu.pt*=.75;resetCombo();queueFloat(cu,-30,message('fRefund'),'#ff5d5d');
     if(b.f){
       if(!breakBox(cu.x,SERVE_Y+8)){
@@ -535,11 +553,14 @@ const displayedRating=value=>NETWORK?.campaign?fmtNum(Math.floor(value*100+1e-9)
 function clearPlayerClaims(){for(const q of allCust())if(q.claim==='p')q.claim=null;}
 function findSrc(need){const stored=perksHome()&&PptVillagePerks.findStored(perksHome(),need,G.clock,canTake);
   if(stored)return stored;
+  const town=activeTownHome();if(town)for(const kind of ['buffer','dock']){const b=town[kind].find(p=>!p.r&&p.ready<=G.clock&&canTake(p)&&need.some(n=>n.c===p.c&&n.s===p.s));if(b)return{townStore:kind,parcel:b};}
   for(const n of need){const fi=fridgeFind(n);if(fi>=0&&canTake(S.fridge[fi]))return{fz:fi};
-  const a=slotArr(n.c,n.s),b=a[a.length-1];if(b&&!b.r&&b.c===n.c&&b.s===n.s&&canTake(b))return{c:n.c,s:n.s};}return null;}
-function srcTop(src){if(src.store)return PptVillagePerks.storageTop(perksHome(),src);if(src.fz!=null)return S.fridge[src.fz];const a=slotArr(src.c,src.s);return a[a.length-1];}
-function sourceStand(src){if(src.fz!=null)return FRIDGE_STAND;if(src.store)return PptVillagePerks.shelfSource(src);return slotStand(src.c,src.s);}
-function sourceTake(src){if(src.store)return PptVillagePerks.remove(perksHome(),src);if(src.fz!=null){const b=S.fridge[src.fz];S.fridge[src.fz]=null;return b;}return slotArr(src.c,src.s).pop();}
+  const a=slotArr(n.c,n.s),b=a[a.length-1];if(b&&!b.r&&b.c===n.c&&b.s===n.s&&canTake(b))return{c:n.c,s:n.s};}
+  if(townPerk(2,'express'))for(const [i,stack] of S.floor.entries()){const b=stack.at(-1);if(b&&!b.r&&b.ready<=G.clock&&canTake(b)&&need.some(n=>n.c===b.c&&n.s===b.s))return{floor:i};}
+  return null;}
+function srcTop(src){if(src.townStore)return activeTownHome()?.[src.townStore]?.includes(src.parcel)?src.parcel:null;if(src.floor!=null)return S.floor[src.floor].at(-1);if(src.store)return PptVillagePerks.storageTop(perksHome(),src);if(src.fz!=null)return S.fridge[src.fz];const a=slotArr(src.c,src.s);return a[a.length-1];}
+function sourceStand(src){if(src.townStore)return src.townStore==='dock'?{x:180,y:480}:src.townStore==='returns'||townPerk(3,'express')?{x:180,y:SERVE_Y}:{x:110,y:435};if(src.floor!=null)return FLOOR[src.floor];if(src.fz!=null)return FRIDGE_STAND;if(src.store)return PptVillagePerks.shelfSource(src);return slotStand(src.c,src.s);}
+function sourceTake(src){if(src.townStore)return PptTownRenovation.remove(activeTownHome(),src.townStore,src.parcel);if(src.floor!=null)return S.floor[src.floor].pop();if(src.store)return PptVillagePerks.remove(perksHome(),src);if(src.fz!=null){const b=S.fridge[src.fz];S.fridge[src.fz]=null;return b;}return slotArr(src.c,src.s).pop();}
 function customerNeedsAfterHands(q){
   const missing=q.need.slice();
   for(const b of G.p.hands){if(b.r)continue;const i=missing.findIndex(n=>n.c===b.c&&n.s===b.s);if(i>=0)missing.splice(i,1);}
@@ -563,13 +584,61 @@ function tapCustomer(q){
   if(q.claim&&q.claim!=='p'){queueFloat(q,-24,message('fBusy'),q.claim.color);return;}
   clearPlayerClaims();
   p.tg=null;
-  if(q.ret){if(!canTake(q.ret)){queueFloat(q,-24,message('fHands'));return;}q.claim='p';p.tg={k:'takeRet',ref:q,x:sx,y:SERVE_Y};return;}
+  if(q.ret){if(!canTake(q.ret)&&!townReturnDirect(q.ret)){queueFloat(q,-24,message('fHands'));return;}q.claim='p';p.tg={k:'takeRet',ref:q,x:sx,y:SERVE_Y};return;}
   routeCustomerOrder(q);
 }
 function shareReturn(){
   if(!housePerk(2,'garden')||!PptVillagePerks.neighborReturn(perksHome()))return false;
   S.cash+=2;G.st.revenue+=2;float(W/2,COUNTER_Y-24,lang==='ru'?'Соседям +$2':'Neighbors +$2','#4cd18a');return true;
 }
+function townReturnDirect(parcel){const home=activeTownHome();return !!(home&&(townPerk(4,'cozy')||townPerk(4,'express'))&&PptTownRenovation.fits(home,'returns',parcel));}
+function townToolsAvailable(){const home=activeTownHome();return !!home&&(townPerk(2,'express')||home.choices.length>=3);}
+function townToolsMarkup(){
+  const home=activeTownHome(),ru=lang==='ru',p=G.p,R=PptTownRenovation,word=(a,b)=>ru?a:b;
+  const btn=(value,label,disabled=false)=>'<button class="btn sec" data-a="townTool" data-v="'+value+'"'+(disabled?' disabled':'')+'>'+label+'</button>';
+  let h='<section class="townTools"><h2>'+word('Возможности ПВЗ','Pickup point tools')+'</h2>';
+  if(townPerk(2,'express'))h+=btn('call',word('Терминал: выбрать ждущего гостя','Call terminal: select waiting guest'));
+  for(const kind of ['buffer','returns','dock']){
+    const capacity=R.capacity(home,kind);if(!capacity)continue;
+    const title=kind==='buffer'?R.text(3,home.choices[2],lang).name:kind==='returns'?R.text(4,home.choices[3],lang).name:word('Буфер разгрузки','Unloading buffer');
+    h+='<div class="cat">'+title+' · '+home[kind].length+'/'+capacity+'</div>';
+    if(kind!=='dock')h+=btn('put:'+kind,word('Поставить выбранную коробку','Store selected parcel'),!R.fits(home,kind,p.hands[p.act]));
+    if(kind==='returns'&&townPerk(4,'express'))h+=btn('bulkReturn',word('Забрать возвраты в тележку','Collect returns into cart'),!home.returns.length||!canTake(home.returns[0]));
+    else home[kind].forEach((b,i)=>h+='<div class="townTools__row">'+svgBox(b)+btn('take:'+kind+':'+i,word('Забрать','Take'),!canTake(b))+'</div>');
+    if(kind==='returns'&&townPerk(4,'logistics'))h+='<small>'+word('Следующий фургон заберёт размещённые здесь возвраты.','The next arriving van collects staged returns.')+'</small>';
+  }
+  if(townPerk(5,'express')){const cargo=G.townNextCargo||[];h+='<div class="cat">'+word('Следующий фургон','Next van')+'</div><div class="townTools__dock">'+(cargo.length?cargo.map(b=>'<span>'+svgBox(b)+'</span>').join(''):'<small>'+word('Больше рейсов нет','No more deliveries')+'</small>')+'</div>';}
+  if(townPerk(5,'logistics')){const can=G.truck&&!G.truck.townUnloadUsed&&!home.dock.length,available=can?G.truck.cargo.map((b,i)=>({b,i})).filter(v=>R.ordinary(v.b)):[];
+    h+='<div class="cat">'+word('Тележка выгрузки','Unloading cart')+'</div><small>'+word('Выбери 2 коробки из фургона. Буфер должен быть свободен.','Select 2 parcels from the van. The buffer must be empty.')+'</small>';
+    if(available.length>=2)h+='<div class="townTools__dock">'+available.map(v=>'<label>'+svgBox(v.b)+'<input type="checkbox" data-town-dock="'+v.i+'" aria-label="'+word('Коробка ','Parcel ')+(v.i+1)+'"></label>').join('')+'</div>'+btn('dock',word('Перенести две коробки','Move two parcels'));
+    else h+='<small>'+word('Дождись рейса или освободи буфер.','Wait for a van or empty the buffer.')+'</small>';
+  }
+  return h+'<button class="btn" data-a="townToolsClose">'+word('Вернуться к смене','Return to shift')+'</button></section>';
+}
+function useTownTool(value){
+  const town=activeTownHome(),p=G?.p,R=PptTownRenovation;if(!town||!p||p.busy>0)return false;
+  const [method,kind,index]=String(value).split(':');
+  if(method==='call'&&townPerk(2,'express')){
+    const q=G.q.map(line=>line[0]).find(q=>q?.state==='wait'&&!q.ret&&!q.claim&&(findSrc(customerNeedsAfterHands(q))||p.hands.some(b=>!b.r&&q.need.some(n=>n.c===b.c&&n.s===b.s))));
+    if(!q)return false;tapCustomer(q);return !!p.tg;
+  }
+  if(method==='dock'&&townPerk(5,'logistics')&&G.truck&&!G.truck.townUnloadUsed&&!town.dock.length){
+    const values=[...ov.querySelectorAll('input[data-town-dock]:checked')].map(n=>Number(n.dataset.townDock));
+    if(values.length!==2||new Set(values).size!==2||values.some(i=>!R.ordinary(G.truck.cargo[i])))return false;
+    const parcels=values.map(i=>G.truck.cargo[i]);for(const i of values.slice().sort((a,b)=>b-a))G.truck.cargo.splice(i,1);
+    for(const b of parcels){b.ready=G.clock+6+Math.random()*10;R.store(town,'dock',b);}G.truck.townUnloadUsed=true;return true;
+  }
+  let target;
+  if(method==='bulkReturn'&&townPerk(4,'express')&&town.returns.length&&canTake(town.returns[0]))target={k:'townStorage',op:'bulk',store:'returns',x:180,y:SERVE_Y};
+  if(['buffer','returns','dock'].includes(kind)&&R.capacity(town,kind)){
+    const parcel=method==='put'?p.hands[p.act]:town[kind][Number(index)];
+    if(method==='put'&&kind!=='dock'&&R.fits(town,kind,parcel)||method==='take'&&parcel&&canTake(parcel)){
+      const stand=sourceStand({townStore:kind});target={k:'townStorage',op:method,store:kind,parcel,x:stand.x,y:stand.y};
+    }
+  }
+  if(!target)return false;clearPlayerClaims();p.tg=target;return true;
+}
+function showTownTools(){if(!townToolsAvailable()||mode!=='play'||!G||menuOpen||networkPaused||settingsOpen||externallyPaused()||loadFailed)return;paused=true;syncAudio();showOv(townToolsMarkup);}
 function houseSortNext(color){
   const p=G.p,b=p.hands.find(v=>!v.r&&v.c===color&&slotArr(v.c,v.s).length<slotCap(v.c,v.s));
   if(!b)return;
@@ -638,6 +707,12 @@ function interactPlayer(tg){
   const p=G.p,act=p.hands[p.act];
   if(housePowerOff()&&['give','takeRet'].includes(tg.k)){p.tg=tg;return;}
   switch(tg.k){
+  case 'townStorage':{
+    const town=activeTownHome(),R=PptTownRenovation;if(!town)return;
+    if(tg.op==='put'){const i=p.hands.indexOf(tg.parcel);if(i>=0&&R.store(town,tg.store,tg.parcel)){p.act=i;dropActive();}else float(p.x,p.y-20,message('fFull'));}
+    else if(tg.op==='bulk'&&townPerk(4,'express')){while(town.returns.length&&canTake(town.returns[0]))p.hands.push(town.returns.shift());p.act=Math.max(0,p.hands.length-1);drawHands();}
+    else if(canTake(tg.parcel)){const b=R.remove(town,tg.store,tg.parcel);if(b){p.hands.push(b);p.act=p.hands.length-1;drawHands();}}
+    break;}
   case 'houseStorage':{
     const home=perksHome();if(!home)return;
     if(tg.op==='put'){
@@ -665,7 +740,7 @@ function interactPlayer(tg){
       cell.push(b);if(wrong)G.shake[c+'_'+s]=.4;}
     else if(cell.length&&canTake(cell[cell.length-1])){p.hands.push(cell.pop());p.act=p.hands.length-1;drawHands();}
     break;}
-  case 'fridge':{const i=tg.i,b=S.fridge[i];
+  case 'fridge':{const i=tg.i;if(i<0||i>=S.fridge.length)return;const b=S.fridge[i];
     if(act&&act.s===BIG){float(tg.x,tg.y-30,message('fNoFit'),'#ffd166');return;}
     if(act&&!b){S.fridge[i]=dropActive();}
     else if(b&&canTake(b)){S.fridge[i]=null;p.hands.push(b);p.act=p.hands.length-1;drawHands();}
@@ -690,7 +765,9 @@ function interactPlayer(tg){
     if(tg.batch&&(!b||b.r||!customerNeedsAfterHands(q).some(n=>n.c===b.c&&n.s===b.s)||!canTake(b))){routeCustomerOrder(q);return;}
     if(!b||!canTake(b)){q.claim=null;return;}
     sourceTake(src);
-    p.hands.push(b);p.act=p.hands.length-1;drawHands();
+    p.hands.push(b);
+    if(tg.batch&&townPerk(2,'logistics')&&src.c!=null&&src.s!=null){let next;while((next=srcTop(src))&&!next.r&&canTake(next)&&customerNeedsAfterHands(q).some(n=>n.c===next.c&&n.s===next.s)){sourceTake(src);p.hands.push(next);}}
+    p.act=p.hands.length-1;drawHands();
     if(tg.batch)routeCustomerOrder(q);else p.tg={k:'give',ref:q,x:winX(q.win),y:SERVE_Y,auto:b};return;}
   case 'give':{const q=tg.ref;if(q.state!=='wait'||!isFront(q)){if(q.claim==='p')q.claim=null;return;}
     if(q.personalCheck===true){
@@ -722,10 +799,10 @@ function interactPlayer(tg){
     }
     let i=tg.auto?p.hands.indexOf(tg.auto):p.act;if(i<0)i=p.act;if(!p.hands[i])return;p.act=i;
     if(give(q,dropActive(),null)){p.busyLen=p.busy=1.5;p.busyT='cod';float(p.x,p.y-30,message('fCod'),'#ffd166');}break;}
-  case 'takeRet':{const q=tg.ref;q.claim=null;if(q.state!=='wait'||!q.ret||!canTake(q.ret))return;
-    if(!shareReturn()){p.hands.push(q.ret);p.act=p.hands.length-1;}q.ret=null;drawHands();S.cash+=3;G.st.revenue+=3;review(5);leave(q,true);queueFloat(q,-30,message('fReturn'),'#4cd18a');break;}
-  case 'mess':if(G.mess.includes(tg.ref)){p.busyLen=p.busy=lv('mop')?1:3;p.busyT=tg.ref;}break;
-  case 'heap':if(act){dropActive();S.heap++;}else if(S.heap>0){p.busyLen=p.busy=1.2/(lv('mop')?2:1);p.busyT='heap';}break;
+  case 'takeRet':{const q=tg.ref;q.claim=null;if(q.state!=='wait'||!q.ret)return;const direct=townReturnDirect(q.ret)&&(townPerk(4,'express')||!canTake(q.ret));if(!direct&&!canTake(q.ret))return;
+    if(direct)PptTownRenovation.store(activeTownHome(),'returns',q.ret);else if(!shareReturn()){p.hands.push(q.ret);p.act=p.hands.length-1;}q.ret=null;drawHands();S.cash+=3;G.st.revenue+=3;review(5);leave(q,true);queueFloat(q,-30,message('fReturn'),'#4cd18a');break;}
+  case 'mess':if(G.mess.includes(tg.ref)){p.busyLen=p.busy=1;p.busyT=tg.ref;}break;
+  case 'heap':if(act){dropActive();S.heap++;}else if(S.heap>0){p.busyLen=p.busy=.6;p.busyT='heap';}break;
   }
 }
 // Orientation is presentation-only and follows actual travel, not UI focus.
@@ -779,9 +856,20 @@ function diversifyTruckCargo(cargo,cfg){
   }
   return cargo;
 }
+function makeTruckCargo(){const c=G.cfg,cargo=[];for(let i=0;i<c.cargo;i++)cargo.push(newParcel());diversifyTruckCargo(cargo,c);return cargo;}
 function truckArrive(park=false){
-  const c=G.cfg,cargo=[];for(let i=0;i<c.cargo;i++)cargo.push(newParcel());
-  diversifyTruckCargo(cargo,c);
+  const c=G.cfg,cargo=townPerk(5,'express')&&Array.isArray(G.townNextCargo)?G.townNextCargo:makeTruckCargo();
+  if(townPerk(5,'express'))G.townNextCargo=G.plan.length?makeTruckCargo():[];
+  if(townPerk(4,'logistics')&&activeTownHome().returns.length){const n=activeTownHome().returns.splice(0).length;float(W/2,TRUCK.y-16,(lang==='ru'?'Возвраты забраны: ':'Returns collected: ')+n,'#4cd18a');}
+  if(cityFreight()&&cargo.length){
+    if(!S.xlDeliverySeen){
+      cargo[0]={c:cargo[0].c,s:BIG,f:false,r:false,ready:1e9};
+      S.xlDeliverySeen=true;
+    }else if(cityColdFreight()&&!S.coldDeliverySeen){
+      cargo[0]={c:cargo[0].c,s:0,f:false,r:false,cold:COLD_T,ready:1e9};
+      S.coldDeliverySeen=true;
+    }
+  }
   if(G.autoLocker&&S.autoLocker)PptCampaignLocker.reserve(S.autoLocker,cargo);
   if(G.ev==='chaos'){for(const b of cargo){b.ready=G.clock+6+Math.random()*10;putFloor(b,120+Math.random()*170,390+Math.random()*102);}G.truck={cargo:[],t:2.5,max:2.5,dump:true};return;}
   const wait=c.wait+(housePerk(2,'barn')?30:0);
@@ -916,7 +1004,7 @@ function update(dt){
         if(!b.r)give(q,b,null);else if(!putFloor(b,winX(i),SERVE_Y))S.heap++;
       }return;}
       q.pt-=home?PptVillagePerks.patienceLoss(home,q,dt,loss):dt*loss;
-      if(q.pt<=0){angryLeave(q);playerCue('warn');}}
+      if(q.pt<=0){if(townPerk(5,'cozy')&&!G.townPorchUsed){G.townPorchUsed=true;q.pt=12;q.max=Math.max(q.max,12);queueFloat(q,-24,lang==='ru'?'Навес: ещё 12 с':'Porch: 12 more s','#4cd18a');}else{angryLeave(q);playerCue('warn');}}}
     // Personal requests belong to the point the player can actually see.
     // On switching branches, release unclaimed requests immediately; a route
     // already accepted by the player remains intact and can finish normally.
@@ -944,7 +1032,7 @@ function update(dt){
   }}
   else if(p.tg){
     let sp=150*(1+.15*lv('shoes'));
-    if(p.hands.some(b=>b.s===BIG))sp*=.65;
+    if(p.hands.some(b=>b.s===BIG))sp*=lv('xlcart')?.85:.65;
     if(S.heap>0&&dist(p.x,p.y,HEAP.x,HEAP.y)<HEAP.r)sp*=lv('warehouse')?.8:.6;
     if(G.mess.some(m=>dist(p.x,p.y,m.x,m.y)<20))sp*=.7;
     if(home)sp*=PptVillagePerks.routeSpeed(home,p);
@@ -973,7 +1061,7 @@ function ctrSpec(id,d){
 function ctrText(id,d,target){const sp=ctrSpec(id,d),tx=STR[lang].ctrs[id];return{name:tx[0],desc:countText('ctr'+id[0].toUpperCase()+id.slice(1),tx[1],[Number.isFinite(target)?target:sp.target]),reward:formatText(tx[2],[undefined,sp.cash||0])};}
 function ctrUpdate(st,nStars){const c=S.contract,result=PptContracts.update(c,st,nStars,S.day);if(!result)return null;
   c.prog=result.progress;
-  if(result.outcome==='done'){c.state='done';if(result.reward==='pay')S.perm.pay+=.05;else if(result.reward==='pat')S.perm.pat+=.05;else S.cash+=ctrSpec(c.id,c.start).cash;}
+  if(result.outcome==='done'){c.state='done';if(result.reward==='gloves')S.up.gloves=1;else if(result.reward==='pay')S.perm.pay+=.05;else if(result.reward==='pat')S.perm.pat+=.05;else S.cash+=ctrSpec(c.id,c.start).cash;}
   if(result.outcome==='fail')c.state='fail';
   return {id:c.id,outcome:result.outcome||'progress',progress:c.prog,target:c.target,cash:ctrSpec(c.id,c.start).cash||0};}
 function goalsMet(st){if(NETWORK.away)return PptPostgame.evaluate(NETWORK.away.goals,awayStats(st));const g=G.cfg.goal;const a=st.served>=g,b=st.angry===0,c=G.maxMult>=1.5;return[a,b,c];}
@@ -985,12 +1073,14 @@ function endDay(){
   for(const q of allCust())if(q.housePrepared){putHome(q.housePrepared,winX(q.win),SERVE_Y);delete q.housePrepared;}
   if(G.truck&&G.truck.cargo.length){const n=G.truck.cargo.length;S.cash-=2*n;st.penalties+=2*n;st.sentBack+=n;}
   const met=goalsMet(st),nStars=met.filter(Boolean).length,bonus=nStars*15;S.cash+=bonus;
-  const home=activeVillageHome(),baseRent=G.legacyVillageLease?rentFor(storyDifficultyDay(S.day)):shiftBaseRent(S.day);
-  const rent=home?0:Math.round(baseRent*G.mod.rent);
-  const upkeep=home?PptVillagePerks.upkeep(home,S.day,PptVillageHome.upkeep,G.ev):0;
+  const home=activeVillageHome(),town=G.legacyTownLease?null:activeTownHome(),baseRent=G.legacyVillageLease?rentFor(storyDifficultyDay(S.day)):shiftBaseRent(S.day);
+  const rent=home||town?0:Math.round(baseRent*G.mod.rent);
+  const upkeep=home?PptVillagePerks.upkeep(home,S.day,PptVillageHome.upkeep,G.ev):town?PptTownRenovation.upkeep:0;
   const gardenSales=home?PptVillagePerks.gardenSales(home):0;
-  S.cash+=gardenSales-rent-upkeep;
+  const styleSet=home||town?PptVillagePerks.setBonus(home||town):0;
+  S.cash+=gardenSales+styleSet-rent-upkeep;
   for(const b of G.p.hands.splice(0)){if(!putFloor(b,250,420,b))S.heap++;}
+  if(town){if(!townPerk(3,'cozy'))for(const b of town.buffer.splice(0))putHome(b,250,420);for(const b of town.dock.splice(0))putHome(b,250,420);}
   eachParcel((b,where)=>{if(b.cold!=null&&where!=='fridge')spoil(b);});
   clearSpoiledLocker();
   for(const b of S.locker)if(b)b.lk=false;
@@ -1004,14 +1094,14 @@ function endDay(){
   if(lv('returns'))S.heap=0;
   const beforeContract=S.cash,ctrMsg=ctrUpdate(st,nStars),contractCash=S.cash-beforeContract;
   const cardExpense=S.card==='coffee'?40:0;
-  const profit=st.revenue-st.refunds-st.penalties+bonus+gardenSales+contractCash-rent-upkeep-wages-cardExpense;
+  const profit=st.revenue-st.refunds-st.penalties+bonus+gardenSales+styleSet+contractCash-rent-upkeep-wages-cardExpense;
   const deed=!NETWORK.away&&branchRuntime.current().id===1?NETWORK.villageHome:null;
   const instalment=deed?PptVillageHome.paymentDue(deed,profit,S.cash,villageWages()):0;
   if(instalment){deed.debt-=instalment;S.cash-=instalment;}
   if(home)home.shifts++;
   sumData={st,bonus,rent,wages,lvUps,met,nStars,ctrMsg,goal:G.cfg.goal,net:profit-instalment,rating:stars(),
     ...(cardExpense?{cardExpense}:{}),...(contractCash?{contractCash}:{}),
-    ...(home?{upkeep,gardenSales}:{}),...(deed?{instalment,debt:deed.debt}:{})};
+    ...(home?{upkeep,gardenSales,...(styleSet?{styleSet}:{})}:town?{upkeep,...(styleSet?{styleSet}:{})}:{}),...(deed?{instalment,debt:deed.debt}:{})};
   if(NETWORK.postgame)sumData.calendarDay=calendarDay();
   S.lowDays=stars()<2?(S.lowDays||0)+1:0;sumData.lowWarn=S.lowDays===1;
   NETWORK.totals.days++;NETWORK.totals.served+=st.served;NETWORK.totals.revenue+=st.revenue;
@@ -1044,7 +1134,7 @@ function preset(n){
   S=fresh();S.day=n;S.cash=n>1?100+40*n:60;
   const up=S.up;
   if(n>=8)Object.assign(up,{shoes:1,cart:1,shelves:1,robot:1,cooler:1,coffee:1,conveyor:1,scanner:1,queue:1});
-  if(n>=11)Object.assign(up,{ai:1,mop:1,tv:1,returns:1});
+  if(n>=11)Object.assign(up,{ai:1,tv:1,returns:1});
   if(n>=21)Object.assign(up,{shoes:2,cart:2,shelves:2,tune:1,ai:2,queue:2,warehouse:1,gloves:1});
   if(n>=31)Object.assign(up,{shoes:3});
   if(n>=PptNetwork.HIRING_DAY)S.cands=[genCand(),genCand(),genCand()];
@@ -1095,7 +1185,9 @@ function handlePlayerPointer(e){
   // radius leaves the rest of the underlying control available.
   for(const m of G.mess)if(dist(x,y,m.x,m.y)<14){p.tg={k:'mess',ref:m,x:m.x,y:m.y};return;}
   if(bigOn())for(let c=0;c<G.cfg.colors;c++){const r=bigRect(c);if(x>=r.x-4&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){const st=slotStand(c,BIG);p.tg={k:'cell',c,s:BIG,x:st.x,y:st.y};return;}}
-  if(fridgeOn()&&x>=FRIDGE.x&&x<=FRIDGE.x+FRIDGE.w&&y>=FRIDGE.y&&y<=FRIDGE.y+FRIDGE.h){let i=0,bd=1e9;for(let k=0;k<6;k++){const r=fzRect(k),d=dist(x,y,r.x+r.w/2,r.y+r.h/2);if(d<bd){bd=d;i=k;}}p.tg={k:'fridge',i,x:FRIDGE_STAND.x,y:FRIDGE_STAND.y};return;}
+  if(fridgeOn()&&x>=FRIDGE.x&&x<=FRIDGE.x+FRIDGE.w&&y>=FRIDGE.y&&y<=FRIDGE.y+FRIDGE.h){
+    if(S.fridge.length===3&&y>=fzRect(3).y){float(FRIDGE_STAND.x,FRIDGE_STAND.y-25,lang==='ru'?'Расширение в магазине':'Expand in shop');return;}
+    let i=0,bd=1e9;for(let k=0;k<S.fridge.length;k++){const r=fzRect(k),d=dist(x,y,r.x+r.w/2,r.y+r.h/2);if(d<bd){bd=d;i=k;}}p.tg={k:'fridge',i,x:FRIDGE_STAND.x,y:FRIDGE_STAND.y};return;}
   for(let c=0;c<G.cfg.colors;c++)for(let s=0;s<G.cfg.shapes;s++){const r=cellRect(c,s);
     if(x>=r.x-2&&x<=r.x+r.w+2&&y>=r.y-18&&y<=r.y+r.h+4){const st=cellStand(c,s);p.tg={k:'cell',c,s,x:st.x,y:st.y};return;}}
   if(G.truck&&!G.truck.dump&&x>=TRUCK.x&&x<=TRUCK.x+TRUCK.w&&y>=TRUCK.y-8&&y<=TRUCK.y+TRUCK.h){p.tg={k:'truck',x:W/2,y:TRUCK.y-14};return;}
@@ -1258,6 +1350,16 @@ function drawShelfHeaders(cfg){
 function txt(s,x,y,size,col,weight,align){ctx.font=(weight||800)+' '+size+'px Nunito, sans-serif';ctx.fillStyle=col;ctx.textAlign=align||'center';ctx.textBaseline='middle';ctx.fillText(s,x,y);}
 function ring(x,y,r,col){ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.stroke();}
 function patColor(fr){return fr>.5?'#4cd18a':fr>.25?'#f3c934':'#ff5d5d';}
+function scannerDestination(){
+  const b=G?.p.hands[G.p.act];
+  if(!b||b.r||!lv('scanner'))return null;
+  if(b.cold!=null&&fridgeOn()){
+    const i=S.fridge.indexOf(null);
+    return {rect:i<0?FRIDGE:fzRect(i),full:i<0};
+  }
+  const rect=b.s===BIG?bigRect(b.c):cellRect(b.c,b.s);
+  return {rect,full:slotArr(b.c,b.s).length>=slotCap(b.c,b.s)};
+}
 function wantedKeys(){const s=new Set();if(!G)return s;
   if(G.hl)for(const n of G.hl.need)s.add(key(n.c,n.s));
   if(lv('scanner'))for(const q of allCust())if(q.state==='wait')for(const n of q.need)s.add(key(n.c,n.s));
@@ -1426,7 +1528,7 @@ function drawScene(){
     for(let j=0;j<6;j++){const cx=x0+(j%3)*cw,cy=COUNTER_Y+5+Math.floor(j/3)*13;ctx.fillStyle=lockerBitmap?'rgba(94,74,42,.07)':'#5e4a2a';rr(cx+1,cy,cw-2,12,2);ctx.fill();const b=S.locker[j];if(b)drawBox(cx+cw/2,cy+6,b,10);if(b?.lk){ctx.strokeStyle='#ffc766';ctx.lineWidth=1;rr(cx+1.5,cy+.5,cw-3,11,2);ctx.stroke();ctx.fillStyle='#ffc766';ctx.beginPath();ctx.arc(cx+cw-3,cy+9.5,1.25,0,7);ctx.fill();}}}
   const want=wantedKeys();
   const tutorialActive=!!G&&S.day<=2&&branchRuntime.current()?.id===1&&(!NETWORK?.campaign||NETWORK.campaign.chapter==='village');
-  const tutorialItem=tutorialActive?G.p.hands[G.p.act]:null;
+  const tutorialItem=tutorialActive&&!lv('scanner')?G.p.hands[G.p.act]:null;
   const tutorialPathsHidden=!!(tutorialItem&&Number.isInteger(tutorialItem.c)&&tutorialItem.c>=0&&tutorialItem.c<cfg.colors&&Number.isInteger(tutorialItem.s)&&tutorialItem.s>=0&&tutorialItem.s<cfg.shapes);
   // Dotted routes are a training aid: after the first two shifts they leave
   // with the shelf-placement highlight. During training they stay hidden
@@ -1461,8 +1563,8 @@ function drawScene(){
   // generic "from day N" placeholder would promise the wrong unlock date.
   const storyNoLateRacks=!!NETWORK?.campaign;
   if(fridgeOn()||!storyNoLateRacks){const F=FRIDGE,on=fridgeOn(),fridgeBitmap=on&&globalThis.PptEnvironmentSample?.fridge(ctx,F);if(!fridgeBitmap){ctx.fillStyle=on?'#cfe3ee':'#24282d';rr(F.x,F.y,F.w,F.h,6);ctx.fill();}
-    txt(t('fridge').toUpperCase(),F.x+6,F.y+7,8,on?'#1f4f6a':'#6c757e',800,'left');
-    if(on)for(let i=0;i<6;i++){const r=fzRect(i);ctx.fillStyle=fridgeBitmap?'rgba(169,201,220,.12)':'#a9c9dc';rr(r.x+.5,r.y+.5,r.w-1,r.h-1,3);ctx.fill();if(fridgeBitmap){ctx.strokeStyle='rgba(42,92,122,.42)';ctx.lineWidth=.65;ctx.stroke();}const b=S.fridge[i];if(b)drawBox(r.x+r.w/2,r.y+r.h/2,b,WORLD_BOX_SIZE);}
+    txt(t('fridge').toUpperCase()+(on?' '+S.fridge.filter(Boolean).length+'/'+S.fridge.length:''),F.x+3,F.y+7,8,on?'#1f4f6a':'#6c757e',800,'left');
+    if(on)for(let i=0;i<S.fridge.length;i++){const r=fzRect(i);ctx.fillStyle=fridgeBitmap?'rgba(169,201,220,.12)':'#a9c9dc';rr(r.x+.5,r.y+.5,r.w-1,r.h-1,3);ctx.fill();if(fridgeBitmap){ctx.strokeStyle='rgba(42,92,122,.42)';ctx.lineWidth=.65;ctx.stroke();}const b=S.fridge[i];if(b)drawBox(r.x+r.w/2,r.y+r.h/2,b,WORLD_BOX_SIZE);}
     else txt(t('fromDay',23),F.x+F.w/2,F.y+30,9,'#6c757e',700);}
   const xlBitmap=bigOn()&&globalThis.PptEnvironmentSample?.xlRack(ctx,{x:308,y:375,w:46,h:96});
   if(bigOn()||!storyNoLateRacks)for(let c=0;c<4;c++){const r=bigRect(c),on=bigOn()&&c<cfg.colors;ctx.fillStyle=on?(xlBitmap?'rgba(28,32,37,.08)':'#1c2025'):'#24282d';rr(r.x,r.y,r.w,r.h,4);ctx.fill();
@@ -1470,6 +1572,10 @@ function drawScene(){
     if(a.length){const tp=a[a.length-1];drawBox(r.x+22,r.y+r.h/2,tp,WORLD_BOX_SIZE);txt('×'+a.length,r.x+r.w-3,r.y+4,8,'#cfd5d0',800,'right');
       if(tp.r){ctx.strokeStyle='#ff5d5d';ctx.lineWidth=1.5;rr(r.x+.5,r.y+.5,r.w-1,r.h-1,4);ctx.stroke();}}
     else txt('XL',r.x+24,r.y+r.h/2+1,9,'#4a525c',800);}
+  if(fridgeOn()&&S.fridge.length===3){
+    const row=fzRect(3);ctx.fillStyle='rgba(28,32,37,.85)';ctx.fillRect(row.x,row.y,FRIDGE.w,row.h);
+    txt(lang==='ru'?'+3 в магазине':'+3 in shop',row.x+FRIDGE.w/2,row.y+row.h/2,9,'#c1d3da',700);
+  }
   if(!bigOn()&&!storyNoLateRacks){txt('XL',331,388,9,'#6c757e',800);txt(t('fromDay',21),331,402,8,'#6c757e',700);}
   FLOOR.forEach(f=>{ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=1;rr(f.x-14,f.y-14,28,28,4);ctx.stroke();});
   if(G)for(const m of G.mess){ctx.fillStyle='rgba(150,205,235,.55)';ctx.beginPath();ctx.ellipse(m.x,m.y,17,11,.3,0,7);ctx.fill();
@@ -1496,6 +1602,14 @@ function drawScene(){
     ctx.fillStyle='#1b1e22';rr(W/2-72,H-32,144,16,4);ctx.fill();txt(msg,W/2,H-24,9,'#ffb27a',800);}
   drawStoryTruck();
   drawShelfHeaders(cfg);
+  const scan=scannerDestination();
+  if(scan){
+    const r=scan.rect;
+    ctx.save();ctx.strokeStyle=scan.full?'#ff6464':'#66dbff';ctx.lineWidth=3;
+    ctx.globalAlpha=.8+.2*Math.sin(animationTime*6);
+    rr(r.x+2,r.y+2,r.w-4,r.h-4,4);ctx.stroke();ctx.restore();
+    if(scan.full)txt('×',r.x+r.w/2,r.y+r.h/2,15,'#fff',900);
+  }
   if(home)globalThis.PptVillageHouseArt?.wetCells(ctx,G,cellRect);
   if(!G){ctx.restore();return;}
   if(storyCrowdVisible()){
@@ -1624,6 +1738,7 @@ function hintText(){
   if(!G||mode!=='play')return '';
   if(storyTruckPhase()?.boxes.some(box=>box.progress>0))return lang==='ru'?'Грузовик разгружает посылки!':'The truck is unloading packages!';
   if(storyCrowdVisible())return lang==='ru'?'Пришло много посетителей!':'A crowd has arrived!';
+  if(scannerDestination()?.full)return lang==='ru'?'Сканер: нет места. Освободите отмеченную секцию.':'Scanner: no room. Free up the marked section.';
   if(G.q.some(line=>line[0]?.state==='wait'&&line[0].personalCheck===true))return lang==='ru'?'Клиент с ! ждёт личной проверки: нажмите на него. Сотрудник поможет позже, сканер ускорит проверку.':'A customer marked ! needs your check: tap them. Staff can help later; a scanner makes your check faster.';
   if(G.mess.length)return lang==='ru'?'Пятно замедляет работу. Нажмите на него, чтобы убрать.':'Spills slow work down. Tap a spill to clean it.';
   const p=G.p;
@@ -1634,7 +1749,7 @@ function hintText(){
     if(G.truck?.cargo.length&&!G.truck.dump)return t('hintTruck');
     return Number.isFinite(G.plan[0])?t('nextTruck',Math.max(0,Math.ceil(G.plan[0]-G.clock))):t('noTruck');}
   if(G.autoLocker&&G.clock<30)return S.autoLocker?.closing?(lang==='ru'?'Переезд: заказы идут в обычное окно':'Moving: orders go to the counter'):(lang==='ru'?'Постамат: загрузка и выдача без игрока':'Locker: automatic loading and pickup');
-  const nw2=STR[lang].news[S.day];if(S.day>=21&&nw2&&G.clock<20&&!(NETWORK?.campaign&&S.day===26))return nw2;
+  const newsDay=storyDifficultyDay(S.day),nw2=STR[lang].news[newsDay];if(newsDay>=21&&nw2&&G.clock<20&&!(NETWORK?.campaign&&[21,23,26].includes(newsDay)))return nw2;
   if(lockerOn()){
     const used=S.locker.some(Boolean);
     if(G.legacyLockerDrainOnly)return lang==='ru'?'Прежний постамат: заберите оставшиеся посылки':'Previous locker: retrieve the remaining parcels';
@@ -1665,8 +1780,8 @@ function syncHud(){
   const playing=G&&mode==='play';
   const toolsButton=$('bHouseTools');
   if(toolsButton){
-    toolsButton.hidden=!(playing&&perksHome()&&!menuOpen&&!paused&&!networkPaused&&!settingsOpen);
-    toolsButton.textContent=lang==='ru'?'Дом':'House';
+    toolsButton.hidden=!(playing&&(perksHome()||townToolsAvailable())&&!menuOpen&&!paused&&!networkPaused&&!settingsOpen);
+    toolsButton.textContent=activeTownHome()?(lang==='ru'?'ПВЗ':'Tools'):(lang==='ru'?'Дом':'House');
   }
   $('bAwayGoals').hidden=!(NETWORK?.away&&playing&&!menuOpen&&!networkPaused&&!paused);
   if(!$('bAwayGoals').hidden)$('bAwayGoals').textContent=PptPostgameUI.words(lang).tracking;
@@ -1721,7 +1836,7 @@ function drawHands(){if(branchRuntime&&!branchRuntime.canPresent())return;const 
 globalThis.PptEnvironmentSample?.setRedraw(drawHands);
 $('slots').addEventListener('click',e=>{if(!G||G.storyLive||mode!=='play'||loadFailed||menuOpen||networkPaused||paused||externallyPaused())return;
   const b=e.target.closest('.slot');if(!b)return;const i=+b.dataset.i;if(G.p.hands[i]){G.p.act=i;drawHands();}});
-$('bHouseTools')?.addEventListener('click',showHouseTools);
+$('bHouseTools')?.addEventListener('click',()=>activeTownHome()?showTownTools():showHouseTools());
 $('bLang').addEventListener('click',()=>{lang=lang==='ru'?'en':'ru';langChosen=true;try{localStorage.setItem(LKEY,lang);}catch(e){}syncHud();drawHands();rerenderOv();uiCue('tick');});
 function toggleNetworkPause(){if(menuOpen||settingsOpen||loadFailed||externallyPaused())return;networkPaused=!networkPaused;NETWORK.manualPaused=networkPaused;syncAudio();save();if(!loadFailed)presentBranch();uiCue('tick');}
 $('bPause').addEventListener('click',toggleNetworkPause);
@@ -1730,6 +1845,44 @@ $('bAwayGoals').addEventListener('click',()=>{if(NETWORK?.away&&mode==='play'&&!
 // ---------- overlays ----------
 const ov=$('ov');let ovFn=null,overlayCash=null,pendingReset=null,pendingExpansion=null,expansionConfirmId=0;
 let releaseDialogueHouse=null;
+let courierFrameCounter=0;
+function cityCourierFrame(){const frame=ov.querySelector('#cityCourierFrame');return !ov.hidden&&frame?.contentWindow&&frame.dataset?.token?frame:null;}
+function courierPost(frame,type,data={}){frame?.contentWindow?.postMessage({type,token:frame.dataset.token,...data},location.origin==='null'?'*':location.origin);}
+function courierSettings(){return {lang,...playerAudio?.snapshot().preferences};}
+function syncCourierFrame(){
+  const frame=cityCourierFrame();if(frame?.dataset.ready!=='1')return;
+  const hold=!!(document.hidden||audioPageGone||networkPaused||externallyPaused()||menuOpen||loadFailed),settings=courierSettings(),key=JSON.stringify(settings);
+  if(frame.dataset.settings!==key){frame.dataset.settings=key;courierPost(frame,'ppt-city-courier-settings',settings);}
+  if(hold&&frame.dataset.hold!=='1')courierPost(frame,'ppt-city-courier-pause');
+  frame.dataset.hold=hold?'1':'0';
+}
+// The sorting task uses its own trusted frame and protocol, but the same full
+// screen presentation as the courier. Holds are sent on both edges so a
+// resumed host cannot leave the puzzle permanently paused.
+function cityMatchThreeFrame(){const frame=ov.querySelector('#cityMatchThreeFrame');return !ov.hidden&&frame?.contentWindow&&frame.dataset?.token?frame:null;}
+function matchThreeHeld(){return !!(document.hidden||audioPageGone||networkPaused||paused||externallyPaused()||menuOpen||settingsOpen||loadFailed);}
+// Focusing the embedded puzzle blurs the host window even though the host
+// document retains focus. Recheck the actual document on every audio sync so
+// losing the app's focus from inside the puzzle still creates a hard hold.
+function audioWindowBlurred(){
+  const sorting=cityMatchThreeFrame();
+  if(sorting?.dataset.ready==='1'&&document.activeElement===sorting&&typeof document.hasFocus==='function')return !document.hasFocus();
+  return audioBlurred;
+}
+function syncMatchThreeFrame(){
+  const frame=cityMatchThreeFrame();if(frame?.dataset.ready!=='1')return;
+  const settings=courierSettings(),key=JSON.stringify(settings),hold=matchThreeHeld();
+  if(frame.dataset.settings!==key){frame.dataset.settings=key;courierPost(frame,'ppt-match-three-settings',settings);}
+  if(frame.dataset.hold!==String(hold)){frame.dataset.hold=String(hold);courierPost(frame,'ppt-match-three-pause',{paused:hold});}
+}
+// Called by the Android wrapper before falling back to the normal Back rules.
+globalThis.PptCityCourierBack=()=>{
+  const sorting=cityMatchThreeFrame();
+  if(sorting){if(sorting.dataset.ready==='1')courierPost(sorting,'ppt-match-three-back');else cityMatchThreeExit();return true;}
+  const frame=cityCourierFrame();if(!frame)return false;
+  if(frame.dataset.ready==='1')courierPost(frame,'ppt-city-courier-back');else cityCourierExit();
+  return true;
+};
 // One controller for both buses: the SFX synth and the music director share holds, unlock and preferences.
 let audioController=null,musicDirector=null;
 try{
@@ -1745,7 +1898,10 @@ const RUSH_EVENTS=new Set(['bf','chaos']),LAYER_EVENTS=new Set(['ny','sale11','s
 function musicScene(holds){
   if(loadFailed||holds.includes('recovery'))return {scene:null,layer:null};
   if(menuOpen)return {scene:'menu',layer:null};
-  if(globalThis.VillageHouseUI?.isSearching?.())return {scene:'search',layer:null};
+  if(cityMatchThreeFrame())return {scene:'sorting',layer:null};
+  // The courier runner and the town basement play their own loops inside their frames.
+  if(cityCourierFrame()||!ov.hidden&&ov.querySelector('.townBasementFrame'))return {scene:null,layer:null};
+  if(globalThis.VillageHouseUI?.isSearching?.())return {scene:'house',layer:null};
   if(mode==='play'&&G){
     if(holds.includes('manual'))return {scene:'pause',layer:null};
     const ev=S?.ev;
@@ -1755,9 +1911,13 @@ function musicScene(holds){
   return {scene:'pause',layer:null};
 }
 function syncAudio(){
+  syncCourierFrame();
+  syncMatchThreeFrame();
+  const townFrame=ov.querySelector('.townBasementFrame');
+  if(townFrame){const hold=!!(document.hidden||networkPaused||externallyPaused()||menuOpen||loadFailed);if(townFrame.dataset.hold!==String(hold)){townFrame.dataset.hold=String(hold);townFrame.contentWindow?.postMessage({type:'ppt-town-basement-hold',hold},location.origin);}}
   if(!playerAudio)return;
   const holds=[];
-  if(document.hidden)holds.push('hidden');if(audioBlurred)holds.push('blur');if(audioPageGone)holds.push('pagehide');
+  if(document.hidden)holds.push('hidden');if(audioWindowBlurred())holds.push('blur');if(audioPageGone)holds.push('pagehide');
   if(menuOpen)holds.push('menu');if(settingsOpen||!ov.hidden)holds.push('overlay');
   if(networkPaused||paused||NETWORK?.branches.some(branch=>branch.status==='play'&&branch.paused))holds.push('manual');
   if(loadFailed)holds.push('recovery');holds.push(...externalPause.snapshot().reasons.map(reason=>'external:'+reason));
@@ -1780,7 +1940,11 @@ document.addEventListener('pointerdown',event=>{if(event.pointerType==='mouse')u
 document.addEventListener('pointerup',event=>{if(event.pointerType!=='mouse')unlockAudio(event);},true);
 document.addEventListener('click',unlockAudio,true);
 document.addEventListener('keydown',unlockAudio,true);
-window.addEventListener('blur',()=>{audioBlurred=true;syncAudio();});
+window.addEventListener('blur',()=>{
+  audioBlurred=true;
+  // Focus/activeElement may not yet have updated during the parent blur.
+  if(cityMatchThreeFrame()?.dataset.ready==='1'&&typeof queueMicrotask==='function')queueMicrotask(syncAudio);else syncAudio();
+});
 window.addEventListener('focus',()=>{audioBlurred=false;syncAudio();});
 window.addEventListener('pagehide',()=>{audioPageGone=true;syncAudio();});
 window.addEventListener('pageshow',()=>{audioPageGone=false;syncAudio();});
@@ -1851,6 +2015,10 @@ function showOv(fn,summary=null){if(branchRuntime&&!branchRuntime.canPresent())r
   const nextDialogue=ov.querySelector('.campaignDialogue');
   const houseCanvas=nextDialogue?.querySelector?.('.campaignDialogue__house');
   if(houseCanvas)releaseDialogueHouse=PptVillageHouseArt.mountDialogue(houseCanvas,NETWORK.villageHome);
+  globalThis.PptTownUI?.mount(ov);
+  ov.querySelector('.townBasementFrame')?.addEventListener('load',()=>{const frame=ov.querySelector('.townBasementFrame');if(frame){
+    if(frame.dataset.restore==='1'&&NETWORK.townHome?.arcade)frame.contentWindow?.postMessage({type:'ppt-town-basement-restore',data:NETWORK.townHome.arcade},location.origin);
+    delete frame.dataset.hold;syncAudio();}});
   if(NETWORK?.storyPresentation?.type==='villageInstall')PptVillageInstall.mount(ov,NETWORK.villageHome);
   if(keyboard&&nextDialogue&&(previousDialogue||previousAction==='resume')&&dialogueFocusReturn){
     const controls=nextDialogue.querySelectorAll('[data-a]');
@@ -1865,7 +2033,7 @@ function showOv(fn,summary=null){if(branchRuntime&&!branchRuntime.canPresent())r
     nextDialogue.querySelector('[data-a="campaignSceneNext"],[data-a="storyQueueNext"]')?.focus?.({preventScroll:true});
   }else if(!nextDialogue&&previousAction!=='resume')dialogueFocusReturn=null;
 }
-function rerenderOv(){if(!ov.hidden&&ovFn)showOv(ovFn,contractFxSummary);}
+function rerenderOv(){if(cityCourierFrame()){syncCourierFrame();return;}if(cityMatchThreeFrame()){syncMatchThreeFrame();return;}if(!ov.hidden&&ovFn)showOv(ovFn,contractFxSummary);}
 // Repainting an overlay builds a new card, which starts at the top. After a
 // purchase or a staff change the player stays on the same screen, so the
 // page is put back where it was scrolled.
@@ -1899,6 +2067,15 @@ function act(a,v){
 }
 function actCore(a,v){
   if(externallyPaused()&&a!=='lang'&&a!=='retry')return;
+  if(a==='cityCourierStart'){startCityCourier();return;}
+  if(a==='cityCourierExit'&&NETWORK?.storyPresentation?.type==='cityCourier'){cityCourierExit();return;}
+  if(a==='cityMatchThreeStart'){startCityMatchThree();return;}
+  if(a==='cityMatchThreeExit'&&NETWORK?.storyPresentation?.type==='cityMatchThree'&&cityMatchThreeFrame()?.dataset.ready!=='1'){cityMatchThreeExit();return;}
+  if(a==='townRepair'&&NETWORK?.storyPresentation?.type==='townRepair'&&!loadFailed){const level=NETWORK.storyPresentation.level;campaignCommit(candidate=>{PptTownRenovation.repair(candidate.townHome,level,v,candidate.campaign.shifts);candidate.storyPresentation={type:'townInstall',level};});return;}
+  if(a==='townInstallNext'&&NETWORK?.storyPresentation?.type==='townInstall'&&!loadFailed){campaignCommit(candidate=>{delete candidate.storyPresentation;});return;}
+  if((a==='townTool'||a==='townToolsClose')&&!loadFailed&&mode==='play'&&paused&&!networkPaused&&!menuOpen&&activeTownHome()){
+    if(a==='townToolsClose'||useTownTool(v))closeHouseTools();else showTownTools();return;
+  }
   if((a==='houseTool'||a==='houseToolsClose')&&!loadFailed&&mode==='play'&&paused&&!networkPaused&&!menuOpen&&perksHome()){
     if(a==='houseToolsClose'||useHouseTool(v))closeHouseTools();else showHouseTools();
     return;
@@ -2027,6 +2204,7 @@ function actCore(a,v){
     else{
       if(!['shoes','brand'].includes(v))PptNetwork.recordExpansionDebit(NETWORK,NETWORK.activeId,cost);
       S.cash-=cost;S.up[v]=level+1;
+      if(v==='coldspace')S.fridge.push(null,null,null);
       if(['shoes','brand'].includes(v)&&NETWORK.branches.length>1){const first=NETWORK.branches.find(branch=>branch.id===1);first.state.up[v]=level+1;}
       if(v==='staffroom')PptCampaign.recordStaffRoomPurchase(S,calendarDay());
       guidePurchased(v);save();syncHud();keepCardScroll(showShop);
@@ -2070,6 +2248,120 @@ function villageScene(candidate,id){
   if(!candidate.storySeen?.includes(id))candidate.storySeen=[...(candidate.storySeen||[]),id];
   candidate.storyPresentation={type:'scene',id,step:0};
 }
+function showTownWork(){
+  const home=activeTownHome(),c=NETWORK?.campaign;
+  if(!home||c.status!=='active'||networkBatch||menuOpen||networkPaused||paused||loadFailed||NETWORK.storyPresentation||!['summary','brief','shop','team'].includes(mode)||!branchRuntime.canPresent())return false;
+  const work=PptTownRenovation.due(home,c.shifts);if(!work)return false;
+  const seen=id=>NETWORK.storySeen?.includes(id);
+  let scene=work.kind==='basement'?'town_basement_'+(work.episode+1):'town_repair_'+work.level;
+  if(work.level===1&&!seen('town_first_shift'))scene='town_first_shift';
+  else if(work.level===3&&!seen('town_village_news'))scene='town_village_news';
+  campaignCommit(candidate=>{if(!seen(scene))villageScene(candidate,scene);else candidate.storyPresentation=work.kind==='basement'?{type:'townBasement',episode:work.episode}:{type:'townRepair',level:work.level};});
+  return true;
+}
+window.addEventListener('message',event=>{
+  const p=NETWORK?.storyPresentation,frame=ov.querySelector('.townBasementFrame');
+  if(!frame||event.source!==frame.contentWindow||event.origin!==location.origin||p?.type!=='townBasement'||event.data?.episode!==p.episode||loadFailed)return;
+  if(event.data.type==='ppt-town-basement-checkpoint'){
+    const home=NETWORK.townHome,previous=home.arcade;
+    try{PptTownRenovation.validateArcade(event.data.data,p.episode);}catch(error){console.error('Invalid basement checkpoint',error);return;}
+    home.arcade=event.data.data;if(!save()){if(previous===undefined)delete home.arcade;else home.arcade=previous;}return;
+  }
+  if(event.data.type==='ppt-town-basement-complete'&&NETWORK.townHome?.arcade?.status==='won'&&!externallyPaused()&&!networkPaused){
+    campaignCommit(candidate=>{PptTownRenovation.clear(candidate.townHome,p.episode,candidate.campaign.shifts);delete candidate.storyPresentation;});
+  }
+});
+function cityCourierAvailable(){
+  const c=NETWORK?.campaign;
+  return c?.chapter==='city'&&c.status==='active'&&c.shifts>=1&&NETWORK.activeId===1&&!NETWORK.away&&!NETWORK.storyPresentation&&
+    !NETWORK.cityCourier?.complete&&['summary','brief'].includes(mode);
+}
+function cityCourierButton(){
+  if(!cityCourierAvailable())return '';
+  const label=NETWORK.cityCourier?(lang==='ru'?'Продолжить доставку':'Resume delivery'):(lang==='ru'?'Срочная доставка · помочь Нике':'Rush delivery · help Nika');
+  return '<button type="button" class="btn sec cityCourierStart" data-a="cityCourierStart">'+label+'</button>';
+}
+function startCityCourier(){
+  if(!cityCourierAvailable()||loadFailed||menuOpen||settingsOpen||networkPaused||paused||!branchRuntime.canPresent())return;
+  campaignCommit(candidate=>{
+    if(candidate.cityCourier)candidate.storyPresentation={type:'cityCourier'};
+    else{candidate.cityCourier={complete:false,checkpoint:null};villageScene(candidate,'city_courier_intro');}
+  });
+}
+function cityCourierExit(state){
+  if(NETWORK?.storyPresentation?.type!=='cityCourier'||loadFailed||externallyPaused()||networkPaused)return false;
+  return campaignCommit(candidate=>{
+    if(state!==undefined)candidate.cityCourier.checkpoint=state;
+    delete candidate.storyPresentation;
+  });
+}
+window.addEventListener('message',event=>{
+  const frame=cityCourierFrame(),msg=event.data;
+  if(!frame||event.source!==frame.contentWindow||event.origin!==location.origin||msg?.token!==frame.dataset.token||
+     NETWORK?.storyPresentation?.type!=='cityCourier'||loadFailed)return;
+  if(msg.type==='ppt-city-courier-ready'){
+    if(frame.dataset.ready==='1')return;
+    const settings=courierSettings();frame.dataset.settings=JSON.stringify(settings);
+    courierPost(frame,'ppt-city-courier-init',{...settings,state:NETWORK.cityCourier.checkpoint});
+    frame.dataset.ready='1';syncCourierFrame();return;
+  }
+  const request={'ppt-city-courier-checkpoint':'checkpoint','ppt-city-courier-exit':'exit','ppt-city-courier-complete':'complete'}[msg.type];
+  if(!['checkpoint','exit','complete'].includes(request)||frame.dataset.ready!=='1')return;
+  const reply=ok=>courierPost(frame,'ppt-city-courier-save-result',{request,ok});
+  let state;
+  try{state=CourierCheckpoint.validate(msg.state);}catch(error){console.error('Invalid city delivery checkpoint',error);reply(false);return;}
+  if(request==='checkpoint'){
+    const task=NETWORK.cityCourier,previous=task.checkpoint;task.checkpoint=state;
+    const ok=save();if(!ok)task.checkpoint=previous;reply(ok);return;
+  }
+  if(request==='exit'){const ok=cityCourierExit(state);if(!ok)reply(false);return;}
+  if(externallyPaused()||networkPaused||msg.delivered!==4||state.runner?.status!=='won'||CourierCheckpoint.delivered(state)!==4){reply(false);return;}
+  const ok=campaignCommit(candidate=>{candidate.cityCourier={complete:true};villageScene(candidate,'city_courier_done');});
+  if(!ok)reply(false);
+});
+function cityMatchThreeAvailable(){
+  const c=NETWORK?.campaign;
+  return c?.chapter==='city'&&c.status==='complete'&&NETWORK.activeId===1&&NETWORK.storyPresentation?.type==='finished'&&
+    !NETWORK.away&&!NETWORK.cityMatchThree?.complete&&!NETWORK.branches.some(branch=>branch.status==='play');
+}
+function startCityMatchThree(){
+  if(!cityMatchThreeAvailable()||loadFailed||menuOpen||settingsOpen||networkPaused||paused||!branchRuntime.canPresent())return false;
+  return campaignCommit(candidate=>{
+    if(candidate.cityMatchThree)candidate.storyPresentation={type:'cityMatchThree'};
+    else{candidate.cityMatchThree={complete:false,checkpoint:null};villageScene(candidate,'city_sorting_intro');}
+  });
+}
+function cityMatchThreeExit(state){
+  if(NETWORK?.storyPresentation?.type!=='cityMatchThree'||loadFailed||externallyPaused()||networkPaused)return false;
+  return campaignCommit(candidate=>{
+    if(state!==undefined)candidate.cityMatchThree.checkpoint=state;
+    candidate.storyPresentation={type:'finished'};
+  });
+}
+window.addEventListener('message',event=>{
+  const frame=cityMatchThreeFrame(),msg=event.data;
+  if(!frame||event.source!==frame.contentWindow||event.origin!==location.origin||msg?.token!==frame.dataset.token||
+     NETWORK?.storyPresentation?.type!=='cityMatchThree'||loadFailed)return;
+  if(msg.type==='ppt-match-three-ready'){
+    if(frame.dataset.ready==='1')return;
+    const settings=courierSettings(),held=matchThreeHeld();frame.dataset.settings=JSON.stringify(settings);frame.dataset.hold=String(held);
+    courierPost(frame,'ppt-match-three-init',{...settings,paused:held,state:NETWORK.cityMatchThree.checkpoint});
+    frame.dataset.ready='1';syncMatchThreeFrame();return;
+  }
+  const request={'ppt-match-three-checkpoint':'checkpoint','ppt-match-three-exit':'exit','ppt-match-three-complete':'complete'}[msg.type];
+  if(!['checkpoint','exit','complete'].includes(request)||frame.dataset.ready!=='1')return;
+  const reply=ok=>courierPost(frame,'ppt-match-three-save-result',{request,ok});
+  let state;
+  try{state=PptMatchThreeCheckpoint.transition(NETWORK.cityMatchThree.checkpoint,msg.state);}catch(error){console.error('Invalid sorting checkpoint',error);reply(false);return;}
+  if(request==='checkpoint'){
+    const task=NETWORK.cityMatchThree,previous=task.checkpoint;task.checkpoint=state;
+    const ok=save();if(!ok)task.checkpoint=previous;reply(ok);return;
+  }
+  if(request==='exit'){const ok=cityMatchThreeExit(state);if(!ok)reply(false);return;}
+  if(matchThreeHeld()||!PptMatchThreeCheckpoint.complete(state)){reply(false);return;}
+  const ok=campaignCommit(candidate=>{candidate.cityMatchThree={complete:true};villageScene(candidate,'city_sorting_done');});
+  if(!ok)reply(false);
+});
 function showVillageHouseStory(preparing=false){
   if(!villageLocation()||networkBatch||!branchRuntime.canPresent()||menuOpen||networkPaused||paused||loadFailed||
      NETWORK.storyPresentation||NETWORK.villageHome||NETWORK.villageLegacyDeparture||journeyGuideActive()||
@@ -2092,6 +2384,18 @@ function showVillageHouseStory(preparing=false){
   });
   return true;
 }
+// Repairs II-V open with their own conversation. The scene is remembered as
+// seen when it starts; after its last line the repair card opens by itself.
+const VILLAGE_REPAIR_SCENES=Object.freeze([null,null,'village_repair_walls','village_repair_floor','village_repair_lights','village_repair_yard']);
+function villageRepairScene(home){return VILLAGE_REPAIR_SCENES[PptVillageHome.due(home)]||null;}
+function villageRepairTalkPending(){
+  const home=activeVillageHome(),id=home&&villageRepairScene(home);
+  return !!id&&!NETWORK.storySeen?.includes(id);
+}
+function villageRepairTalkDone(){
+  const home=activeVillageHome(),id=home&&villageRepairScene(home);
+  return !!id&&!!NETWORK.storySeen?.includes(id);
+}
 function villageWork(offered=true){
   if(!villageLocation()||!['summary','shop','brief','team'].includes(mode)||NETWORK.storyPresentation||journeyGuideActive())return null;
   const home=NETWORK.villageHome;
@@ -2104,6 +2408,14 @@ function showVillageWork(forceOffer=false){
   const ui=globalThis.VillageHouseUI,kind=villageWork(forceOffer||NETWORK.villageOfferDay===undefined);
   if(!kind||!ui)return false;
   if(ui.isOpen())return true;
+  if(kind==='repair'&&villageRepairTalkPending()){
+    const id=villageRepairScene(NETWORK.villageHome),mark=NETWORK.campaign.chapter+':'+NETWORK.campaign.shifts;
+    if(ov.querySelector('.campaignDialogue'))hideOv();
+    const shown=campaignCommit(candidate=>villageScene(candidate,id));
+    // The repair talk is this gap's conversation; other interludes wait a shift.
+    if(shown)interludeMark=mark;
+    return shown;
+  }
   if(kind==='purchase'&&forceOffer&&NETWORK.villageOfferDay!==undefined){
     return campaignCommit(candidate=>{delete candidate.villageOfferDay;});
   }
@@ -2152,7 +2464,9 @@ function villageBrief(){
   if(!home)return S.day===4&&NETWORK.storySeen?.includes('village_rent_notice')?'<p class="networkHelp">'+(ru?'Послезавтра аренда вырастет до $150 в день. Анна принесёт объявления после работы.':'Rent goes up to $150 a day the day after tomorrow. Anna will bring the listings after work.')+'</p>':villageWorkButton();
   const weather=PptVillagePerks.weather(S.day,S.ev);
   const sky={sun:['Солнечно','Sunny'],cloud:['Пасмурно','Cloudy'],rain:['Дождь','Rain'],snow:['Снег','Snow']};
-  return '<p class="networkHelp">'+sky[weather][ru?0:1]+' · '+(ru?'Ремонт ':'Renovation ')+home.choices.length+'/5 · '+(ru?'Содержание ':'Upkeep ')+money(PptVillagePerks.upkeep(home,S.day,PptVillageHome.upkeep,S.ev))+'</p>'+
+  const styleSet=PptVillagePerks.setBonus(home);
+  return '<p class="networkHelp">'+sky[weather][ru?0:1]+' · '+(ru?'Ремонт ':'Renovation ')+home.choices.length+'/5 · '+
+    (styleSet?(ru?'Набор стиля +':'Style set +')+money(styleSet)+' · ':'')+(ru?'Содержание ':'Upkeep ')+money(PptVillagePerks.upkeep(home,S.day,PptVillageHome.upkeep,S.ev))+'</p>'+
     (home.choices[3]==='cozy'?'<button type="button" class="btn sec" data-a="villageRadio">'+(ru?'Радио':'Radio')+' · '+(home.radio==='patience'?(ru?'спокойная музыка':'calm music'):(ru?'бодрая музыка':'upbeat music'))+'</button>':'');
 }
 function campaignCommit(change){
@@ -2202,6 +2516,13 @@ function campaignGoals(){
     const cash=result.checks.cash;cash.target=Math.max(cash.target,PptVillageHome.townDeposit+100+villageWages());cash.met=cash.current>=cash.target;
     result.ready=result.ready&&cash.met&&result.checks.house.met&&result.checks.restoredShifts.met;
   }
+  const town=activeTownHome();
+  if(town&&NETWORK.campaign.status==='active'){
+    const repairs=town.choices.length,cleared=town.episodes.length,finished=town.finishedAt===null?0:Math.max(0,NETWORK.campaign.shifts-town.finishedAt);
+    result.checks.townRepairs={current:repairs,target:5,met:repairs===5};result.checks.townBasement={current:cleared,target:3,met:cleared===3};
+    result.checks.townRestoredShifts={current:Math.min(2,finished),target:2,met:finished>=2};
+    result.ready=result.ready&&repairs===5&&cleared===3&&finished>=2;
+  }
   return result;
 }
 function firstDayLocked(){return !!NETWORK?.campaign&&NETWORK.campaign.chapter==='village'&&S.day<=2;}
@@ -2242,7 +2563,6 @@ function showCampaignMap(){
     {label:(ru?'Центр: рейтинг не ниже ★':'Downtown: rating at least ★')+fmtNum(checks.center.minimum,1),
       progress:checks.center.current+'/'+checks.center.target+(ru?' смен подряд':' consecutive shifts'),done:checks.center.met}]:center?[
     {label:ru?'Провести смены в центре':'Complete downtown shifts',progress:checks.centerShifts.current+'/'+checks.centerShifts.target,done:checks.centerShifts.met},
-    {label:ru?'Первая выдача через постамат':'First locker pickup',progress:checks.lockerPickup.met?(ru?'Клиент получил заказ':'Order collected'):(ru?'Купить постамат и дождаться первого получения':'Buy a locker and wait for the first pickup'),done:checks.lockerPickup.met},
     {label:ru?'Подготовить сотрудника':'Have an employee ready',progress:checks.staff.current+'/'+checks.staff.target,done:checks.staff.met}]:c.chapter==='city'?[{label:ru?'Пригласить блогера':'Invite the blogger',
     progress:checks.promotion.met?(ru?'Первый визит состоялся':'First visit complete'):
       !checks.promotion.introduced?(ru?'Обсудите продвижение после первой смены':'Discuss promotion after the first shift'):
@@ -2259,6 +2579,9 @@ function showCampaignMap(){
     objectives.push({label:ru?'Купить дом и закончить пять ремонтов':'Buy a house and finish five renovations',progress:checks.house.current+'/5',done:checks.house.met},
       {label:ru?'Провести две смены в готовом доме':'Work two shifts in the restored house',progress:checks.restoredShifts.current+'/2',done:checks.restoredShifts.met});
   }
+  if(checks.townRepairs)objectives.push({label:ru?'Расчистить три помещения подвала':'Clear three basement rooms',progress:checks.townBasement.current+'/3',done:checks.townBasement.met},
+    {label:ru?'Выполнить пять улучшений ПВЗ':'Complete five premises improvements',progress:checks.townRepairs.current+'/5',done:checks.townRepairs.met},
+    {label:ru?'Провести две смены в готовом ПВЗ':'Work two shifts in the renovated pickup point',progress:checks.townRestoredShifts.current+'/2',done:checks.townRestoredShifts.met});
   if(c.chapter==='city'&&checks.ai)objectives.push({label:ru?'Получить ИИ-помощника':'Get an AI assistant',progress:checks.ai.current+'/'+checks.ai.target,done:checks.ai.met});
   if(c.chapter==='capital'&&!checks.network.met){
     const prep=PptNetwork.capitalExpansionQuest(NETWORK)?.checks;
@@ -2268,7 +2591,7 @@ function showCampaignMap(){
       {label:ru?'Задание: собрать команду':'Quest: build the team',progress:Math.min(prep.staff.current,prep.staff.target)+'/'+prep.staff.target,done:prep.staff.met});
   }
   let html=PptCampaignUI.map({lang,chapter:c.chapter,district:c.chapter==='city'?(center?'center':'outskirts'):null,objectives,canAdvance:ready&&mode!=='play'&&NETWORK.journeyGuide!=='map_view',finished:c.status==='complete'});
-  if(center&&!checks.lockerPickup.met&&!S.up.locker)html=html.replace('<div class="campaignActions">','<div class="campaignActions"><button class="campaignButton" data-a="shop">'+(ru?'Открыть магазин':'Open shop')+'</button>');
+  const courier=cityCourierButton();if(courier)html=html.replace('<div class="campaignActions">','<div class="campaignActions">'+courier);
   if(center&&(S.autoLocker?.closing||S.locker.some(Boolean))){
     const pending=(S.autoLocker?.slots.filter(Boolean).length||0)+S.locker.filter(Boolean).length;
     const note=pending?(ru?'Подготовка к переезду: новых заказов в постамат нет, остальные идут в обычное окно. Дождитесь получения оставшихся заказов: ':'Preparing to move: new orders go to the regular counter. Wait for remaining locker pickups: ')+pending:
@@ -2304,6 +2627,30 @@ function campaignPortrait(path){
 }
 function showCampaignPresentation(){
   const presentation=NETWORK.storyPresentation;if(!presentation)return false;
+  if(presentation.type==='cityMatchThree'){
+    if(cityMatchThreeFrame())return true;
+    const token=globalThis.crypto?.randomUUID?.()||('sorting-'+Date.now()+'-'+(++courierFrameCounter));
+    showOv(()=>{
+      const ru=lang==='ru',title=ru?'Сортировочный центр':'Sorting centre',sortingUrl='prototypes/match-three/index.html?campaign=1&token='+encodeURIComponent(token)+'&lang='+lang;
+      return '<section class="cityCourierShell cityMatchThreeShell" aria-label="'+title+'"><iframe id="cityMatchThreeFrame" class="cityCourierFrame" title="'+title+'" data-token="'+token+'" src="'+esc(sortingUrl)+'"></iframe>'+
+        '<div class="cityCourierLoading"><p role="status">'+(ru?'Загружаем сортировочный центр…':'Loading the sorting centre…')+'</p><button type="button" class="btn sec" data-a="cityMatchThreeExit">'+(ru?'Вернуться к переезду':'Return to the departure screen')+'</button></div></section>';
+    });return true;
+  }
+  if(presentation.type==='cityCourier'){
+    if(cityCourierFrame())return true;
+    const token=globalThis.crypto?.randomUUID?.()||('delivery-'+Date.now()+'-'+(++courierFrameCounter));
+    showOv(()=>{
+      const ru=lang==='ru',title=ru?'Срочная доставка':'Rush delivery',courierUrl='prototypes/city-courier/index.html?campaign=1&token='+encodeURIComponent(token)+'&lang='+lang;
+      return '<section class="cityCourierShell" aria-label="'+title+'"><iframe id="cityCourierFrame" class="cityCourierFrame" title="'+title+'" data-token="'+token+'" src="'+esc(courierUrl)+'"></iframe>'+
+        '<div class="cityCourierLoading"><p role="status">'+(ru?'Загружаем карту мегаполиса…':'Loading the city map…')+'</p><button type="button" class="btn sec" data-a="cityCourierExit">'+(ru?'Вернуться в ПВЗ':'Back to the pickup point')+'</button></div></section>';
+    });return true;
+  }
+  if(presentation.type==='townBasement'){
+    if(!ov.hidden&&ov.querySelector('.townBasementFrame'))return true;
+    showOv(()=>PptTownUI.basementMarkup(presentation.episode,lang,playerAudio?.snapshot().preferences,!!NETWORK.townHome.arcade));return true;
+  }
+  if(presentation.type==='townRepair'){showOv(()=>PptTownUI.choicesMarkup(NETWORK.townHome,presentation.level,lang));return true;}
+  if(presentation.type==='townInstall'){showOv(()=>PptTownUI.installMarkup(NETWORK.townHome,lang));return true;}
   if(presentation.type==='villageInstall'){
     showOv(()=>PptVillageInstall.markup(NETWORK.villageHome,lang));
     return true;
@@ -2313,7 +2660,7 @@ function showCampaignPresentation(){
     showOv(()=>{const line=PptStoryContent.scene(presentation.id,lang)[presentation.step];
       const chapter=NETWORK.campaign.chapter,location=chapter==='city'&&NETWORK.campaign.cityProgress?.district==='center'?'city-center':chapter;
       return PptCampaignUI.dialogue({lang,speaker:line.speaker,text:line.text,portrait:campaignPortrait(line.portrait),location,
-        ownedHouse:!!NETWORK.villageHome&&!NETWORK.away});});return true;
+        ownedHouse:!!NETWORK.villageHome&&!NETWORK.away,townChoices:activeTownHome()?.choices});});return true;
   }
   if(presentation.type==='choose'){
     showOv(()=>{const staff=S.staff.map(person=>({id:person.id,label:nameOf(person)+' · '+STR[lang].roles[person.role][0]+' · '+t('lvlShort',person.lvl)}));return PptCampaignUI.choose({lang,staff});});return true;
@@ -2326,7 +2673,11 @@ function showCampaignPresentation(){
       showOv(()=>'<h2>'+(lang==='ru'?'История пройдена!':'Story complete!')+'</h2><p>'+(lang==='ru'?'От деревни до столицы — теперь у вас работает целая сеть пунктов выдачи.':'From the village to the capital, you have built a pickup point network.')+'</p><p>'+(lang==='ru'?'Сеть продолжает работать. Можно вернуться в знакомые места на одну смену или остаться в столице.':'Your network keeps working. Visit familiar places for one shift or stay in the capital.')+'</p><button class="btn" data-a="postgameStart" data-v="hub">'+(lang==='ru'?'Отправиться в путешествие':'Go on a journey')+'</button><button class="btn sec" data-a="postgameStart">'+(lang==='ru'?'Работать в столице':'Work in the capital')+'</button><button class="btn sec" data-a="menu">'+t('menu')+'</button>');return true;
     }
     if(NETWORK.campaign.chapter==='city'){
-      showOv(()=>'<h2>'+(lang==='ru'?'Мегаполис освоен!':'City chapter complete!')+'</h2><p>'+(lang==='ru'?'Пора открыть пункт на окраине столицы.':'It is time to open a pickup point on the capital outskirts.')+'</p><button class="btn" data-a="campaignCapitalChoose">'+(lang==='ru'?'Отправиться в столицу':'Go to the capital')+'</button><button class="btn sec" data-a="menu">'+t('menu')+'</button>');return true;
+      showOv(()=>{const ru=lang==='ru',cleared=!!NETWORK.cityMatchThree?.complete;
+        return '<h2>'+(ru?'Мегаполис освоен!':'City chapter complete!')+'</h2><p>'+(cleared?(ru?'Сортировочный центр готов. Пора открыть пункт на окраине столицы.':'The sorting centre is ready. It is time to open a pickup point on the capital outskirts.'):
+          (ru?'Перед отъездом помоги Нике закончить три партии в сортировочном центре.':'Before leaving, help Nika finish three sorting rounds.'))+'</p><button class="btn" data-a="'+(cleared?'campaignCapitalChoose':'cityMatchThreeStart')+'">'+(cleared?(ru?'Отправиться в столицу':'Go to the capital'):
+          NETWORK.cityMatchThree?(ru?'Продолжить сортировку':'Resume sorting'):(ru?'Сортировочный центр':'Sorting centre'))+'</button><button class="btn sec" data-a="menu">'+t('menu')+'</button>';
+      });return true;
     }
     showOv(()=>'<h2>'+(lang==='ru'?'Первая часть пройдена!':'First part complete!')+'</h2><p>'+(lang==='ru'?'Деревня и городок готовы. Впереди — мегаполис!':'The village and town chapters are complete. The city is next!')+'</p><button class="btn" data-a="campaignCityChoose">'+(lang==='ru'?'Отправиться в мегаполис':'Go to the city')+'</button><button class="btn sec" data-a="menu">'+t('menu')+'</button>');return true;
   }
@@ -2340,7 +2691,9 @@ function campaignSceneNext(){
     const length=PptStoryContent.scene(current.id,'ru').length;
     if(current.step+1<length){current.step++;return;}
     if(current.id==='village_departure')candidate.storyPresentation={type:'choose'};
-    else if(current.id==='town_final'||current.id==='city_departure'||current.id==='capital_final')candidate.storyPresentation={type:'finished'};
+    else if(current.id==='city_courier_intro')candidate.storyPresentation={type:'cityCourier'};
+    else if(current.id==='city_sorting_intro')candidate.storyPresentation={type:'cityMatchThree'};
+    else if(current.id==='town_final'||current.id==='city_departure'||current.id==='city_sorting_done'||current.id==='capital_final')candidate.storyPresentation={type:'finished'};
     else {
       if(candidate.campaign.chapter==='city'){
         if(current.id==='city_center_arrival')candidate.campaign=PptCampaign.markCityCenterIntroduction(candidate.campaign).campaign;
@@ -2363,6 +2716,7 @@ function campaignInterludeId(){
   const seen=id=>Array.isArray(NETWORK.storySeen)&&NETWORK.storySeen.includes(id),ready=campaignGoals().ready;
   if(c.chapter==='village'){
     const home=activeVillageHome();
+    if(villageRepairTalkPending())return null;
     if(home?.shifts>=1&&!seen('village_town_offer'))return 'village_town_offer';
     if((c.shifts===2||seen('village_town_offer'))&&S.staff.length>0&&!seen('village_team'))return 'village_team';
   }else if(c.chapter==='town'){
@@ -2403,6 +2757,7 @@ function campaignCityChoose(){
 }
 function campaignCapitalChoose(){
   if(NETWORK?.campaign?.chapter!=='city'||NETWORK.campaign.status!=='complete'||NETWORK.storyPresentation?.type!=='finished')return;
+  if(!NETWORK.cityMatchThree?.complete){startCityMatchThree();return;}
   campaignCommit(candidate=>{candidate.storyPresentation={type:'choose'};});
 }
 function campaignFirstDayNext(){
@@ -2458,9 +2813,11 @@ function campaignRescue(){
 }
 function campaignSelect(id){
   if(NETWORK.storyPresentation?.type!=='choose'||!Number.isSafeInteger(id))return;
+  if(NETWORK.campaign.chapter==='city'&&NETWORK.campaign.status==='complete'&&!NETWORK.cityMatchThree?.complete)return;
   const moved=campaignCommit(candidate=>{
     const branch=candidate.branches[0],toCity=candidate.campaign.chapter==='town'&&candidate.campaign.status==='complete',
       toCapital=candidate.campaign.chapter==='city'&&candidate.campaign.status==='complete';
+    if(toCapital&&!candidate.cityMatchThree?.complete)throw new Error('Sorting centre is not complete');
     const result=(toCapital?PptCampaign.beginCapital:toCity?PptCampaign.beginCity:PptCampaign.advance)(candidate.campaign,
       {cash:candidate.cash,staff:branch.state.staff,selectedId:id,aiLevel:branch.state.up.ai||0});
     // Preserve the once-per-upgrade tutorial history even for older saves
@@ -2477,8 +2834,8 @@ function campaignSelect(id){
     }
     const next=fresh();delete next.cash;next.day=branch.state.day;next.storyQueueEligible=false;next.storyTownExtraStaffSlot=true;
     if(toCapital)next.startStaffSlots=1;
-    for(const itemId of ['shoes','cart','scanner','gloves','brand']){
-      if(purchased.includes(itemId))next.up[itemId]=oldUpgrades[itemId];
+    for(const itemId of ['shoes','cart','xlcart','scanner','gloves','brand']){
+      if(purchased.includes(itemId)||(itemId==='gloves'&&oldUpgrades.gloves===1))next.up[itemId]=oldUpgrades[itemId];
     }
     // Orders from an older window locker must not disappear on a chapter move.
     // An interrupted automatic order is likewise carried as the same parcel,
@@ -2498,7 +2855,10 @@ function campaignSelect(id){
       PptVillagePerks.moveStorage(candidate.villageHome,next);
       result.cash-=PptVillageHome.townDeposit;
     }
+    if(toCity&&candidate.townHome)PptTownRenovation.moveStorage(candidate.townHome,next);
     candidate.campaign=result.campaign;candidate.cash=result.cash;candidate.activeId=1;candidate.campaignCheckpoint=campaignClone(next);
+    if(result.campaign.chapter==='town')candidate.townHome=PptTownRenovation.create();else if(candidate.townHome)delete candidate.townHome;
+    if(toCapital){delete candidate.cityCourier;delete candidate.cityMatchThree;}
     candidate.storyPresentation={type:'scene',id:toCapital?'capital_arrival':toCity?'city_arrival':'town_arrival',step:0};
   });
   if(moved)interludeMark=null;
@@ -2525,6 +2885,10 @@ function campaignRetry(){
     if(result.campaign.chapter==='village'){
       delete candidate.villageHome;delete candidate.villageOfferDay;delete candidate.villageLegacyDeparture;delete candidate.villageRentFromDay;
       if(candidate.storySeen)candidate.storySeen=candidate.storySeen.filter(id=>!['village_rent_notice','village_house_listings','village_house_condition','village_repair_paths','village_town_offer'].includes(id));
+    }
+    if(result.campaign.chapter==='town'){
+      candidate.townHome=PptTownRenovation.create();
+      if(candidate.storySeen)candidate.storySeen=candidate.storySeen.filter(id=>!/^town_(?:basement|repair)_/.test(id));
     }
     if(result.campaign.chapter==='capital'){
       const second=candidate.branches.find(item=>item.id===2);
@@ -2578,6 +2942,7 @@ function travelUpgradeLevel(home,id){
 function packAwayTeam(state,home){
   const source=outskirtsState(home);
   state.up=campaignClone(source.up);
+  if(source.fridge.length===6&&state.fridge.length===3)state.fridge.push(null,null,null);
   for(const id of ['shoes','brand']){const level=travelUpgradeLevel(home,id);if(level)state.up[id]=level;}
   state.staff=campaignClone(source.staff);state.perm=campaignClone(source.perm);state.nid=source.nid;
 }
@@ -2629,6 +2994,7 @@ function applyAwayManagement(action,value){
       const offer=shopOffer(item,home);
       if(!offer.canBuy||String(offer.level)!==choice)return false;
       PptNetwork.setCash(home,home.cash-offer.price);state.up[id]=offer.level+1;
+      if(id==='coldspace')state.fridge.push(null,null,null);
       if(id==='staffroom')PptCampaign.recordStaffRoomPurchase(state,calendarDay(state,home));
       if(id==='locker'&&!state.autoLocker)state.autoLocker=PptCampaignLocker.create();
       guidePurchased(id,home);return true;
@@ -2729,6 +3095,7 @@ function branchPreparation(branch){
 function networkReadiness(){branchRuntime.capture();return PptNetwork.shiftReadiness(NETWORK,branchPreparation);}
 function startNetworkDay(){
   if(loadFailed||externallyPaused()||NETWORK.storyPresentation)return false;
+  if(showTownWork())return false;
   if(showVillageHouseStory(true))return false;
   if(showVillageWork())return false;
   branchRuntime.capture();
@@ -2786,19 +3153,21 @@ function tickNetwork(dt){
   }
   return targets.length;
 }
-function showBrief(){if(NETWORK.away){showAwayBrief();return;}if(showVillageHouseStory(true)||campaignInterlude())return;mode='brief';if(showVillageWork())return;if(S.evDay!==S.day){S.ev=pickEvent(S.day);S.evDay=S.day;save();}
+function showBrief(){if(NETWORK.away){showAwayBrief();return;}if(showTownWork()||showVillageHouseStory(true)||campaignInterlude())return;mode='brief';if(showVillageWork())return;if(S.evDay!==S.day){S.ev=pickEvent(S.day);S.evDay=S.day;save();}
   PptNetwork.ensureSetupCandidates(S);
   if(needCard()&&S.cardDay!==S.day){S.cardOpts=shuffle(cardPool()).slice(0,3);S.cardDay=S.day;S.card=null;save();}
-  if(needCtr()&&S.ctrDay!==S.day){S.ctrOpts=shuffle(CTRS).slice(0,3);S.ctrDay=S.day;save();}
+  if(needCtr()&&S.ctrDay!==S.day){S.ctrOpts=shuffle(CTRS.filter(id=>id!=='fragile')).slice(0,lv('gloves')?3:2);if(!lv('gloves'))S.ctrOpts.push('fragile');S.ctrDay=S.day;save();}
   syncHud();
-  showOv(()=>{const ev=S.ev,chapter=NETWORK?.campaign?.chapter,city=chapter==='city',later=city||chapter==='capital',newsDay=later?storyDifficultyDay(S.day):S.day,rawNews=STR[lang].news[newsDay]||'',n=firstDayLocked()&&S.day===2?(lang==='ru'?'Новая форма: треугольник.':'New shape: triangle.'):NETWORK.campaign&&!later&&S.day===6?(lang==='ru'?'Новая форма: звезда. Хрупкие посылки разбиваются на полу и в неправильной ячейке.':'New shape: star. Fragile parcels break on the floor and in the wrong slot.'):(NETWORK.campaign&&!later&&S.day===10)||(campaignBloggerLocked()&&S.day===9)||(city&&newsDay===9&&!NETWORK.campaign.cityProgress.bloggerVisited)||(later&&[6,10].includes(newsDay)&&!(S.up.ai>0))||(NETWORK.campaign&&newsDay===26)||(campaignTechLocked('robot')&&[21,23,25].includes(S.day))?'':rawNews;const goal=dayConfig(S.day,ev,S.card,S).c.goal;
+  showOv(()=>{const ev=S.ev,chapter=NETWORK?.campaign?.chapter,city=chapter==='city',later=city||chapter==='capital',newsDay=later?storyDifficultyDay(S.day):S.day,rawNews=STR[lang].news[newsDay]||'',n=firstDayLocked()&&S.day===2?(lang==='ru'?'Новая форма: треугольник.':'New shape: triangle.'):NETWORK.campaign&&!later&&S.day===6?(lang==='ru'?'Новая форма: звезда. Хрупкие посылки разбиваются на полу и в неправильной ячейке.':'New shape: star. Fragile parcels break on the floor and in the wrong slot.'):(NETWORK.campaign&&!later&&S.day===10)||(campaignBloggerLocked()&&S.day===9)||(city&&newsDay===9&&!NETWORK.campaign.cityProgress.bloggerVisited)||(later&&[6,10].includes(newsDay)&&!(S.up.ai>0))||(NETWORK.campaign&&[21,23,26].includes(newsDay))||(campaignTechLocked('robot')&&[21,23,25].includes(S.day))?'':rawNews;const goal=dayConfig(S.day,ev,S.card,S).c.goal;
     const eventGuide=guideEventPanel(ev);
     const choiceIntro=guideChoicePending(S),disabled=choiceIntro?' disabled':'';
     const aiQuest=NETWORK?.campaign?.chapter==='city'&&NETWORK.campaign.cityProgress.technologySeen&&!(S.up.ai>0);
     let h='<p class="tag">'+t('day',calendarDay())+'</p><h2>'+(ev?t(ev):t('normal'))+'</h2>'+villageBrief();
+    h+=cityCourierButton();
+    if(cityFreight()&&!S.xlDeliverySeen)h+='<p class="lvup">'+(lang==='ru'?'Первая XL-поставка. Освободите руки и отнесите большую коробку в секцию её цвета справа.':'First XL delivery. Empty your hands and carry the large parcel to its colour on the right.')+'</p>';
+    else if(cityColdFreight()&&!S.coldDeliverySeen)h+='<p class="lvup">'+(lang==='ru'?'Первая холодная поставка. После выгрузки у коробки со снежинкой 30 секунд до порчи. Холодильник слева, мест: ':'First cold delivery. A snowflake parcel has 30 seconds outside the fridge after unloading. Fridge slots on the left: ')+S.fridge.length+'</p>';
+    if(activeTownHome())h+=PptTownUI.canvas(activeTownHome().choices,'townBriefArt')+'<p class="networkHelp">'+(lang==='ru'?'Собственное помещение · аренда $0 · содержание $':'Owned premises · rent $0 · upkeep $')+PptTownRenovation.upkeep+'</p>';
     if(aiQuest)h+='<div class="lvup cityAiQuest">'+(lang==='ru'?'Задание: получить ИИ-помощника. Его можно купить в магазине.':'Quest: get an AI assistant. You can buy it in the shop.')+'<button class="btn sec" data-a="shop">'+(lang==='ru'?'Открыть магазин':'Open shop')+'</button></div>';
-    if(city&&NETWORK.campaign.cityProgress?.district==='center'&&NETWORK.campaign.cityProgress.centerIntroSeen&&!NETWORK.campaign.cityProgress.lockerPickupSeen)
-      h+='<div class="lvup cityAiQuest">'+(lang==='ru'?'Задание: купить постамат и дождаться первого получения.':'Quest: buy a locker and wait for the first pickup.')+' '+storyLockerExplanation()+(!(S.up.locker>0)?'<button class="btn sec" data-a="shop">'+(lang==='ru'?'Открыть магазин':'Open shop')+'</button>':'')+'</div>';
     h+=(choiceIntro?guideChoicePanel(choiceIntro):'')+(eventGuide||'<p>'+(ev?eventDescription(ev):t('normalD'))+'</p>')+(n?'<p><b>'+n+'</b></p>':'');
     if(needCtr()){h+='<div class="cat">'+t('ctrT')+'</div><small style="color:var(--muted)">'+t('ctrHint')+'</small>'+S.ctrOpts.map(id=>{const x=ctrText(id,S.day);return '<button type="button" class="pick" data-a="ctr" data-v="'+id+'"'+disabled+'><b>'+x.name+'</b>'+x.desc+'<small>'+x.reward+'</small></button>';}).join('');}
     else if(S.contract&&S.contract.state==='active'){const x=ctrText(S.contract.id,S.contract.start,S.contract.target);h+='<div class="lvup" style="color:var(--accent)">'+t('ctrProg',x.name,fmtNum(S.contract.prog)+'/'+fmtNum(S.contract.target))+' · '+x.desc+'</div>';}
@@ -2839,7 +3208,7 @@ function normalizeSummary(d){
   const number=value=>typeof value==='number'&&Number.isFinite(value);
   if(!number(d.rating)||d.rating<1||d.rating>5)delete d.rating;
   if(d.st&&typeof d.st==='object')for(const key of Object.keys(d.st))if(!number(d.st[key]))d.st[key]=0;
-  for(const key of ['bonus','rent','wages','net','goal','nStars','upkeep','gardenSales','instalment','debt','contractCash','cardExpense'])if(key in d&&!number(d[key]))d[key]=0;
+  for(const key of ['bonus','rent','wages','net','goal','nStars','upkeep','gardenSales','styleSet','instalment','debt','contractCash','cardExpense'])if(key in d&&!number(d[key]))d[key]=0;
   d.lvUps=(d.lvUps||[]).map(value=>{
     if(typeof value!=='string')return value;
     for(const source of ['ru','en'])for(let n=0;n<NAMES[source].length;n++)for(let lvl=1;lvl<=5;lvl++)
@@ -2897,6 +3266,7 @@ function showSummary(){if(NETWORK.away){showAwaySummary();return;}if(!journeyNor
   if(NETWORK?.campaign?.chapter==='village'&&sumData?.storyQueueStep===2&&S.day===3&&NETWORK.journeyGuide===undefined){if(!journeySet('map'))return;}
   if(NETWORK?.journeyGuide==='earn'&&NETWORK.campaign?.chapter==='village'){if(!journeySet('shop'))return;}
   if(NETWORK?.journeyGuide==='map_view'){showCampaignMap();return;}
+  if(!networkBatch&&showTownWork())return;
   if(!networkBatch&&(showVillageHouseStory()||(!NETWORK.villageHome&&showVillageWork())))return;
   syncHud();showOv(()=>{const d=sumData,s=d.st;
   return '<div class="summaryBody"><p class="tag">'+t('day',displayedDay(S,mode,d))+'</p><h2>'+t('sum')+'</h2>'+(firstDayLocked()?'':'<div class="bigstars">'+[0,1,2].map(i=>i<d.nStars?'<b>★</b>':'★').join('')+'</div>'+goalList(d.goal,d.met))+'<div class="rows">'+
@@ -2905,6 +3275,7 @@ function showSummary(){if(NETWORK.away){showAwaySummary();return;}if(!journeyNor
   (d.bonus?line2(t('starBonus'),'+'+money(d.bonus),'pos'):'')+line2(t('rent'),d.rent?'−'+money(d.rent):money(0),d.rent?'neg':'')+
   (d.upkeep?line2(lang==='ru'?'Содержание дома':'House upkeep','−'+money(d.upkeep),'neg'):'')+
   (d.gardenSales?line2(lang==='ru'?'Лавка варенья':'Jam stall','+'+money(d.gardenSales),'pos'):'')+
+  (d.styleSet?line2(lang==='ru'?'Дом в одном стиле':'Matching style','+'+money(d.styleSet),'pos'):'')+
   (d.contractCash?line2(lang==='ru'?'Награда за контракт':'Contract reward','+'+money(d.contractCash),'pos'):'')+
   (d.cardExpense?line2(lang==='ru'?'Кофе по карте дня':'Day card coffee','−'+money(d.cardExpense),'neg'):'')+
   (d.wages?line2(t('wages'),'−'+money(d.wages),'neg'):'')+
@@ -2915,7 +3286,7 @@ function journeySummaryActions(){
   const stage=NETWORK?.journeyGuide,ru=lang==='ru',map=campaignMapButton(),shop='<button class="btn" data-a="shop">'+t('toShop')+'</button>';
   if(stage==='map')return '<div class="journeyGuideSticky">'+journeyPanel(ru?'Посмотрим, что нужно сделать для переезда. Открой карту и цели.':'Let’s see what it takes to move on. Open the map and goals.')+journeyHighlight(map,'campaignMap')+'</div>';
   if(stage==='shop')return '<div class="journeyGuideSticky">'+journeyPanel(ru?'Теперь найдём помощника для разгрузки. Открой магазин.':'Now let’s find someone to unload deliveries. Open the shop.')+journeyHighlight(shop,'shop')+'</div>';
-  return '<div class="summaryActions">'+villageWorkButton()+map+shop+'</div>';
+  return '<div class="summaryActions">'+villageWorkButton()+cityCourierButton()+map+shop+'</div>';
 }
 const saleOn=(state=S,network=NETWORK)=>state.saleDay&&state.saleDay===calendarDay(state,network)-1;
 const priceOf=(it,l,state=S,network=NETWORK)=>Math.round(it.p[l]*(saleOn(state,network)?.75:1));
@@ -2953,7 +3324,7 @@ function guideDiscover(){
   // types without changing the saved acknowledgement format.
   const pending=original.filter(key=>{const id=guideItemId(key),it=SHOP.find(item=>item.id===id);
     if(!it||campaignTechLocked(id)||key!=='upgrade:'+id+':1'||lv(id)>0||seenItem(id)||ids.has(id))return false;ids.add(id);return true;});
-  for(const it of SHOP){if(campaignTechLocked(it.id))continue;const key='upgrade:'+it.id+':1';
+  for(const it of SHOP){if(shopOffer(it).lock)continue;const key='upgrade:'+it.id+':1';
     if(lv(it.id)===0&&(calendarDay()>=it.d||(it.id==='locker'&&storyLockerAvailable()))&&(!it.req||lv(it.req))&&!seenItem(it.id)&&!ids.has(it.id)){pending.push(key);ids.add(it.id);}}
   if(JSON.stringify(pending)!==JSON.stringify(original)||JSON.stringify(seen)!==JSON.stringify(Array.isArray(previousSeen)?previousSeen:[])){
     NETWORK.guidePending=pending;NETWORK.guideSeen=seen;
@@ -2963,17 +3334,17 @@ function guideDiscover(){
 function guideUpgrade(){
   for(const key of NETWORK?.guidePending||[]){
     const id=guideItemId(key),it=SHOP.find(item=>item.id===id);
-    if(it&&!campaignTechLocked(id)&&key==='upgrade:'+id+':1'&&lv(id)===0&&(calendarDay()>=it.d||(id==='locker'&&storyLockerAvailable()))&&(!it.req||lv(it.req))&&!guideItemSeen(id))return {it,key};
+    if(it&&!shopOffer(it).lock&&key==='upgrade:'+id+':1'&&lv(id)===0&&(calendarDay()>=it.d||(id==='locker'&&storyLockerAvailable()))&&(!it.req||lv(it.req))&&!guideItemSeen(id))return {it,key};
   }
   return null;
 }
 const GUIDE_EXPLANATIONS={
   ru:{
+    scanner:'Возьми коробку: голубая рамка покажет, куда её отнести. Красная рамка означает, что место заполнено.',
+    xlcart:'Если носишь много больших коробок, с этой тележкой дорога от грузовика до стеллажа займёт меньше времени.',
+    coldspace:'Когда верхний ряд заполнен, второй ряд даст место ещё трём заказам со снежинкой.',
     shoes:'В них будет легче успевать между грузовиком, полками и клиентами.',
     cart:'С тележкой за один поход можно перенести больше посылок.',
-    scanner:'Он подсветит посылки, которые уже ждут клиенты, и ускорит личную проверку заказа с двух секунд до мгновенной.',
-    mop:'Со шваброй уборка пятна займёт одну секунду вместо трёх.',
-    gloves:'Сохранят первую за смену хрупкую посылку при ошибке игрока или сотрудника.',
     staffroom:'Появится место ещё для одного сотрудника; нанять его нужно отдельно.',
     queue:'У окна смогут ждать больше людей, но их терпение всё равно тратится.',
     shelves:'В каждой ячейке поместится больше посылок, и склад не заполнится так быстро.',
@@ -2990,11 +3361,11 @@ const GUIDE_EXPLANATIONS={
     tv:'Телевизор займёт посетителей, чтобы ожидание не казалось таким долгим.'
   },
   en:{
+    scanner:'Pick up a parcel and follow the blue outline. A red outline means its destination is full.',
+    xlcart:'This trolley saves time on the walk from the truck to the XL rack when carrying a heavy parcel.',
+    coldspace:'When the top row fills up, a second row keeps three more snowflake orders cold.',
     shoes:'These help you get between the truck, shelves and customers faster.',
     cart:'A trolley lets you carry more packages on each trip.',
-    scanner:'It highlights packages waiting customers need and makes a personal order check instant instead of two seconds.',
-    mop:'A mop cleans a spill in one second instead of three.',
-    gloves:'They save the first fragile parcel mishandled by you or an employee each shift.',
     staffroom:'This opens another team slot; you still need to hire someone for it.',
     queue:'More people can wait at each window, though everyone still loses patience.',
     shelves:'Each slot holds more packages, so the shelves fill up less quickly.',
@@ -3016,7 +3387,7 @@ function guideNarratorHeader(){
 }
 function guideItemPanel(hint){
   if(!hint)return '';
-  const name=STR[lang].items[hint.it.id][0],explanation=hint.it.id==='locker'&&storyLockerAvailable()?storyLockerExplanation():GUIDE_EXPLANATIONS[lang]?.[hint.it.id]||'';
+  const name=STR[lang].items[hint.it.id][0],explanation=hint.it.id==='locker'&&storyLockerAvailable()?storyLockerExplanation():GUIDE_EXPLANATIONS[lang]?.[hint.it.id]||STR[lang].items[hint.it.id][1];
   // The first lesson introduces the narrator's role; after an upgrade has
   // been acknowledged (or already purchased in an older save), get straight
   // to the item's name and its useful explanation.
@@ -3045,11 +3416,13 @@ function guideChoicePanel(kind){
   return '<section class="guidePanel guidePulse" role="region" aria-label="'+t('guideNarrator')+'">'+guideNarratorHeader()+'<p>'+text+'</p><button type="button" class="guideAck" data-a="guideChoice" data-v="'+kind+'">'+t('guideUnderstood')+'</button></section>';
 }
 function shopOffer(it,home){
-  const state=home?outskirtsState(home):S,level=home?travelUpgradeLevel(home,it.id):lv(it.id);
+  const state=home?outskirtsState(home):S,level=it.id==='coldspace'&&state.fridge.length===6?1:home?travelUpgradeLevel(home,it.id):lv(it.id);
   let day=level>=1&&it.d2?it.d2:it.d,lock=null;
   if(it.id==='staffroom')day=PptCampaign.staffRoomUnlockDay(state,it.d);
   if(it.id==='locker'&&storyLockerAvailable())day=1;
-  if(campaignTechLocked(it.id))lock='place';
+  if(it.id==='coldspace'&&!(home?home.campaign?.chapter==='capital':fridgeOn()))lock='freight';
+  else if(it.id==='xlcart'&&!(home?home.campaign?.chapter==='capital':bigOn()))lock='freight';
+  else if(campaignTechLocked(it.id))lock='place';
   else if(level>=it.p.length)lock='owned';
   else if(calendarDay(state,home||NETWORK)<day)lock='day';
   else if(it.req&&!(home?travelUpgradeLevel(home,it.req):lv(it.req)))lock='robot';
@@ -3059,6 +3432,7 @@ function shopOffer(it,home){
 function shopBtn(it,offer,travel){const {level,day,price,lock,canBuy}=offer;
   if(journeyGuideActive()&&NETWORK.journeyGuide==='team')return '<button type="button" disabled>'+(lang==='ru'?'Сначала найм':'Hire first')+'</button>';
   if(journeyGuideActive()&&NETWORK.journeyGuide==='shop_intro')return '<button type="button" disabled>'+(lang==='ru'?'Сначала осмотримся':'Look around first')+'</button>';
+  if(lock==='freight')return '<button type="button" disabled>'+(it.id==='xlcart'?'XL':(lang==='ru'?'Холодная поставка':'Cold delivery'))+'</button>';
   if(lock==='place')return '<button type="button" disabled>'+(NETWORK?.campaign?.chapter==='city'&&it.id==='locker'?(lang==='ru'?'Центр мегаполиса':'City downtown'):NETWORK?.campaign?.chapter==='city'&&['robot','tune','ai'].includes(it.id)?(lang==='ru'?'Сначала разговор о технологиях':'Discuss technology first'):(lang==='ru'?'Мегаполис':'City'))+'</button>';
   if(lock==='owned')return '<button type="button" disabled>'+t('owned')+'</button>';
   if(lock==='day')return '<button type="button" disabled>'+t('lockDay',day)+'</button>';
@@ -3173,6 +3547,10 @@ function attachNetwork(network){
     NETWORK.campaign=campaign;NETWORK.campaignCheckpoint=checkpoint;
   }
   migrateCityProgress(NETWORK);
+  if(NETWORK.campaign?.chapter==='town'&&NETWORK.campaign.status==='active'&&!NETWORK.townHome){
+    NETWORK.townHome=PptTownRenovation.create(Math.max(0,NETWORK.campaign.shifts-1));
+    const branch=NETWORK.branches[0];if(branch.status==='play'&&branch.runtime)branch.runtime.legacyTownLease=true;
+  }
   if(NETWORK.campaign?.chapter==='village'&&!NETWORK.villageHome){
     if(NETWORK.storyPresentation?.id==='village_rent_notice'&&NETWORK.villageRentFromDay===undefined){
       const branch=NETWORK.branches[0];NETWORK.villageRentFromDay=displayedDay(branch.state,branch.status,branch.summary)+2;
@@ -3199,6 +3577,10 @@ function attachNetwork(network){
   // the screen gets it back: from the briefing a shift could be started, and
   // the chapter rules refuse to record a shift of a finished chapter.
   if(NETWORK.campaign?.status==='complete'&&!NETWORK.storyPresentation&&!NETWORK.postgame)NETWORK.storyPresentation={type:'finished'};
+  // A legacy city save could already be at the staff-choice screen. The task
+  // is now a mandatory city finale; bring that save back to the departure
+  // screen without touching staff, cash or the completed city progress.
+  if(NETWORK.campaign?.chapter==='city'&&NETWORK.campaign.status==='complete'&&NETWORK.storyPresentation?.type==='choose'&&!NETWORK.cityMatchThree?.complete)NETWORK.storyPresentation={type:'finished'};
   repairRestoredVisitorLooks(NETWORK);
   branchRuntime=PptBranchRuntime.create({
     read:()=>({S,G,mode,sumData,paused}),
@@ -3265,9 +3647,11 @@ function presentBranch(){
   if(menuOpen){showMenu();return;}
   if(networkPaused||paused){showPause();return;}
   if(NETWORK.campaign&&showCampaignPresentation())return;
+  if(showTownWork())return;
   if(showVillageHouseStory()||(!NETWORK.villageHome&&showVillageWork()))return;
   if(NETWORK.villageHome&&!NETWORK.villageHome.cleared&&showVillageWork())return;
   if(NETWORK.villageHome?.cleared&&!NETWORK.villageHome.choices.length&&showVillageWork())return;
+  if(villageRepairTalkDone()&&showVillageWork())return;
   if(mode==='play')hideOv();
   else if(mode==='summary')showSummary();
   else if(mode==='over')showOver();
