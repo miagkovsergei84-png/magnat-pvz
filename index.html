@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset=utf8><script src="vendor/vk-bridge-3.0.2/browser.min.js"></script><script>(function(){var b=window.vkBridge;if(!b||typeof b.send!=="function")return;var e=window.PptVkEarly={hidden:false};try{if(typeof b.subscribe==="function")b.subscribe(function(v){var t=v&&v.detail&&v.detail.type;if(t==="VKWebAppViewHide")e.hidden=true;else if(t==="VKWebAppViewRestore")e.hidden=false;});}catch(x){}try{var p=b.send("VKWebAppInit",{});e.init=p;if(p&&typeof p.catch==="function")p.catch(function(){});}catch(x){}})();</script><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="stylesheet" href="styles/game.css?v=a4a477526673"><link rel="stylesheet" href="styles/campaign.css?v=6755ed50dee6"><link rel="stylesheet" href="styles/start-menu.css?v=4fc2b5c95c45"><link id="gameIcon" rel="icon" type="image/png" href="assets/campaign/icon-photo-ru-chibi-20261111.png"><link rel="stylesheet" href="styles/loading-screen.css?v=7d34b9e7e475"></head><body><script src="src/loading-screen.js?v=34b9065d002b"></script><script>PptLoadingScreen.mount();window.addEventListener("error",function(e){if(document.getElementById("pptLoading")&&(e.error||(e.target&&e.target.tagName==="SCRIPT")))PptLoadingScreen.fail();},true);</script>
 <title>Pickup Point Tycoon</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="styles/village-install.css?v=e1bb32fbe0e6"><link rel="stylesheet" href="styles/village-house.css?v=53cc37687224">
+<link rel="stylesheet" href="styles/village-install.css?v=e1bb32fbe0e6"><link rel="stylesheet" href="styles/village-house.css?v=dc44fa31be16">
 <link rel="stylesheet" href="styles/town-renovation.css?v=7115bc578ca7">
 <link rel="stylesheet" href="styles/fonts.css?v=b4c929bc2e0f">
 <style>
@@ -102,11 +102,11 @@ a.btn{display:block;box-sizing:border-box;text-align:center;text-decoration:none
 #bSound{flex-shrink:0;min-height:44px;min-width:44px}#tray .emptytxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
-<link rel="stylesheet" href="styles/network.css?v=d3e0caeca80b">
+<link rel="stylesheet" href="styles/network.css?v=7eb56ef6e2ae">
 <link rel="stylesheet" href="styles/hud.css?v=e8051791c1e5">
 <link rel="stylesheet" href="styles/wallpaper.css?v=b9b1ebae65a1">
 
-<link rel="stylesheet" href="styles/board-layout.css?v=bc1581550f93">
+<link rel="stylesheet" href="styles/board-layout.css?v=e09f131f596f">
 <style>
 /* Give the separate automatic locker its own space without shrinking the
    playable field when the wide-screen side panels have enough room. */
@@ -126,7 +126,6 @@ a.btn{display:block;box-sizing:border-box;text-align:center;text-decoration:none
     <span class="chip stars" id="hStars">★5.0</span>
     <span class="chip" id="hGoal">0/0</span>
     <span class="chip" id="hCombo">×1</span>
-    <span class="chip" id="evt" hidden></span>
     <span class="spacer"></span>
     <button class="ibtn" id="bLang" type="button">EN</button>
     <button class="ibtn" id="bPause" type="button" aria-label="Pause">II</button>
@@ -134,13 +133,13 @@ a.btn{display:block;box-sizing:border-box;text-align:center;text-decoration:none
   <div id="networkBar">
     <button class="ibtn branchArrow" id="bPrevBranch" type="button" aria-label="Previous branch">‹</button>
     <span id="branchLabel"></span>
+    <span class="chip" id="evt" hidden></span>
     <button class="ibtn" id="bAwayGoals" type="button" hidden></button>
     <button class="ibtn branchArrow" id="bNextBranch" type="button" aria-label="Next branch">›</button>
     <button class="ibtn" id="bExpand" type="button"></button>
     <button class="ibtn" id="bCancelExpansion" type="button" hidden></button>
   </div>
   <div id="networkTotals" hidden></div>
-  <div id="saveNotice" role="status" hidden></div>
   <div id="stage">
     <section class="branchPane selected" id="branch1">
       <button class="branchHead" id="bBranch1" type="button"></button>
@@ -154,6 +153,7 @@ a.btn{display:block;box-sizing:border-box;text-align:center;text-decoration:none
     </section>
   </div>
   <div id="hint"></div>
+  <div id="saveNotice" role="status" hidden></div>
   <div id="tray"><span class="lbl" id="tLbl">В руках</span><div id="slots" role="group" aria-labelledby="tLbl"></div><div id="trayActions"><button class="ibtn" id="bHouseTools" type="button" data-house-tools="1" hidden>Дом</button><button class="ibtn" id="bSound" type="button" aria-label="Action sounds">Sound</button></div></div>
 </div>
 <div id="storyFade" class="storyFade" aria-hidden="true"></div>
@@ -165,7 +165,7 @@ a.btn{display:block;box-sizing:border-box;text-align:center;text-decoration:none
 <script src="prototypes/city-courier/runner-model.js?v=0d801aff3ca6"></script><script src="prototypes/city-courier/checkpoint.js?v=15d74f5e06a2"></script>
 <script src="prototypes/match-three/model.js?v=96a6f17b65e8"></script><script src="prototypes/match-three/checkpoint.js?v=151e1ad9fcbf"></script>
 
-<script src="src/wallpaper.js?v=d8c73bb580f9"></script><script src="src/save.js?v=eaba1e3bd22f"></script><script src="src/network.js?v=b00cfd5970e0"></script><script src="src/branch-runtime.js?v=5230e818beed"></script><script src="src/character-assets.js?v=441754f09cf2"></script><script src="src/character-atlases.js?v=f55b558d6005"></script><script src="src/visitor-walk-data.js?v=f4acd1867df5"></script><script src="src/characters.js?v=514ea84d6589"></script><script src="src/balance.js?v=c5603ab47663"></script><script src="src/day-config.js?v=b6dfed2618d9"></script><script src="src/strings.js?v=e0774aa60d3d"></script><script src="src/layout.js?v=3989ff653e60"></script><script src="src/catalog.js?v=499342d65f0a"></script><script src="src/workers.js?v=186753121db6"></script><script src="src/contracts.js?v=ab8f462390ce"></script><script src="src/platform.js?v=4fa6473077af"></script><script src="src/environment-sample.js?v=f3bc4b1c61d7"></script><script src="src/waiting-hall.js?v=0b90dfc1824c"></script><script src="src/contract-celebration.js?v=5d4e25a0aa6d"></script><script src="src/audio-controller.js?v=196d90edb07a"></script><script src="src/music-director.js?v=add136233323"></script><script src="src/player-sfx.js?v=32cbc4c30a23"></script><script src="src/campaign.js?v=3eaf9f1a56a9"></script><script src="src/story-content.js?v=bea0a3756150"></script><script src="src/campaign-ui.js?v=0dabf3ed24c2"></script><script src="src/postgame.js?v=203396697fbe"></script><script src="src/postgame-ui.js?v=0a8a2bcc569d"></script><script src="src/start-menu.js?v=fc38b8d91a02"></script><script src="src/parcel-locker-campaign.js?v=201658d7b645"></script><script src="src/parcel-locker-visual.js?v=29f12965819b"></script><script src="src/village-home.js?v=25e703ff30f9"></script><script src="src/village-house-perks.js?v=365bfc692658"></script><script src="src/village-house-art.js?v=83d2ac18e795"></script><script src="src/village-house-search.js?v=31714e3be0af"></script><script src="src/village-house-ui.js?v=7311404c26c7"></script><script src="src/village-install.js?v=a6e7ebf61ca1"></script><script src="src/vk-runtime.js?v=a029d20b15ba"></script><script src="src/main.js?v=f48abc33f177"></script>
+<script src="src/wallpaper.js?v=d8c73bb580f9"></script><script src="src/save.js?v=eaba1e3bd22f"></script><script src="src/network.js?v=b00cfd5970e0"></script><script src="src/branch-runtime.js?v=5230e818beed"></script><script src="src/character-assets.js?v=441754f09cf2"></script><script src="src/character-atlases.js?v=f55b558d6005"></script><script src="src/visitor-walk-data.js?v=f4acd1867df5"></script><script src="src/characters.js?v=514ea84d6589"></script><script src="src/balance.js?v=c5603ab47663"></script><script src="src/day-config.js?v=b6dfed2618d9"></script><script src="src/strings.js?v=e0774aa60d3d"></script><script src="src/layout.js?v=3989ff653e60"></script><script src="src/catalog.js?v=499342d65f0a"></script><script src="src/workers.js?v=186753121db6"></script><script src="src/contracts.js?v=ab8f462390ce"></script><script src="src/platform.js?v=4fa6473077af"></script><script src="src/environment-sample.js?v=f3bc4b1c61d7"></script><script src="src/waiting-hall.js?v=0b90dfc1824c"></script><script src="src/contract-celebration.js?v=5d4e25a0aa6d"></script><script src="src/audio-controller.js?v=196d90edb07a"></script><script src="src/music-director.js?v=add136233323"></script><script src="src/player-sfx.js?v=32cbc4c30a23"></script><script src="src/campaign.js?v=3eaf9f1a56a9"></script><script src="src/story-content.js?v=bea0a3756150"></script><script src="src/campaign-ui.js?v=0dabf3ed24c2"></script><script src="src/postgame.js?v=203396697fbe"></script><script src="src/postgame-ui.js?v=0a8a2bcc569d"></script><script src="src/start-menu.js?v=fc38b8d91a02"></script><script src="src/parcel-locker-campaign.js?v=201658d7b645"></script><script src="src/parcel-locker-visual.js?v=29f12965819b"></script><script src="src/village-home.js?v=25e703ff30f9"></script><script src="src/village-house-perks.js?v=365bfc692658"></script><script src="src/village-house-art.js?v=83d2ac18e795"></script><script src="src/village-house-search.js?v=31714e3be0af"></script><script src="src/village-house-ui.js?v=cf8e37770135"></script><script src="src/village-install.js?v=a6e7ebf61ca1"></script><script src="src/vk-runtime.js?v=a029d20b15ba"></script><script src="src/main.js?v=74f5ab052b6b"></script>
 
 </body></html>
 

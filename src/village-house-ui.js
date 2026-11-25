@@ -383,6 +383,7 @@ globalThis.VillageHouseUI = (() => {
           count.textContent = t('Найдено ','Found ') + n + '/' + plan.length;
         }
         updateCount();
+        const findText = t('Найдите сейчас','Find next');
         const scene = node('div','vhouse__scene');
         const picture = node('img','vhouse__panorama');
         picture.alt = room.alt[ix];
@@ -407,14 +408,46 @@ globalThis.VillageHouseUI = (() => {
           const cy = sceneWidth ? (viewport.scrollTop + viewHeight / 2) / (sceneWidth * 2 / 3) : .5;
           viewWidth = w; viewHeight = h;
           sceneWidth = Math.ceil(Math.max(w, h * 1.5) * zoom);
-          panHelp.hidden = sceneWidth <= w + 1 && sceneWidth * 2 / 3 <= h + 1;
+          panHelp.style.visibility = sceneWidth <= w + 1 && sceneWidth * 2 / 3 <= h + 1 ? 'hidden' : '';
           scene.style.width = sceneWidth + 'px';
           scene.style.height = Math.ceil(sceneWidth * 2 / 3) + 'px';
           viewport.scrollLeft = cx * sceneWidth - w / 2;
           viewport.scrollTop = cy * sceneWidth * 2 / 3 - h / 2;
         }
-        current.observer = new ResizeObserver(sizeScene);
+        // The panel below the picture keeps one height through the room: the longest
+        // name to find and the closing words with their button both fit it. The
+        // picture must not be rescaled whenever the text changes.
+        function reserveFinds() {
+          const probe = node('div','vhouse__finds');
+          probe.setAttribute('aria-hidden','true');
+          probe.style.cssText = 'position:absolute;visibility:hidden;left:0;right:0;bottom:0;min-height:0';
+          grid.append(probe);
+          let tallest = 0;
+          const measure = (...content) => { probe.replaceChildren(...content); tallest = Math.max(tallest,Math.ceil(probe.getBoundingClientRect().height)); };
+          for (const item of room.items) {
+            const names = node('ul','vhouse__targets'), box = node('div','vhouse__goals');
+            names.append(node('li',item.id === last ? 'vhouse__story' : '',item.name[ix]));
+            box.append(node('h3','',findText),names);
+            measure(box);
+          }
+          measure(node('p','vhouse__outcome',room.result[ix]),button('vhouse__primary',room.next[ix],() => {}));
+          probe.remove();
+          sidebar.style.minHeight = tallest + 'px';
+          // The same for the line above the picture: room for the widest count.
+          const shown = count.textContent;
+          count.style.minWidth = '';
+          count.textContent = t('Найдено ','Found ') + plan.length + '/' + plan.length;
+          count.style.minWidth = Math.ceil(count.getBoundingClientRect().width) + 'px';
+          count.textContent = shown;
+        }
+        let paneWidth = 0;
+        current.observer = new ResizeObserver(() => {
+          if (paneWidth !== grid.clientWidth) { paneWidth = grid.clientWidth; reserveFinds(); }
+          sizeScene();
+        });
         current.observer.observe(viewport);
+        paneWidth = grid.clientWidth;
+        reserveFinds();
         // Touch devices pan natively. A mouse drag pans either zoom level without collecting an item.
         let drag = null, ignoreClick = false;
         viewport.addEventListener('pointerdown', e => {
@@ -439,6 +472,7 @@ globalThis.VillageHouseUI = (() => {
           if (ignoreClick) { e.stopPropagation(); e.preventDefault(); ignoreClick = false; }
         },true);
         if (complete) {
+          heading.append(node('div','vhouse__tools'));
           sidebar.append(node('p','vhouse__outcome',room.result[ix]));
           const next = button('vhouse__primary',room.next[ix],() => {
             if (state.room === search.rooms.length - 1) finish(config.onCleared);
@@ -450,7 +484,7 @@ globalThis.VillageHouseUI = (() => {
           return;
         }
         const goals = node('div','vhouse__goals');
-        const goalTitle = node('h3','',t('Найдите сейчас','Find next'));
+        const goalTitle = node('h3','',findText);
         goalTitle.id = 'vhouseFindTitle';
         const list = node('ul','vhouse__targets');
         list.setAttribute('aria-labelledby',goalTitle.id);

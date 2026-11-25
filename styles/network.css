@@ -1,4 +1,5 @@
 #app.dual{max-width:1440px}
+#app{--gap:6px}
 #networkBar{display:flex;gap:6px;align-items:center;min-height:30px;font-size:12px;font-weight:800}
 #branchLabel{flex:1}
 #bExpand{font-size:11px;max-width:65%;white-space:normal}
@@ -6,9 +7,9 @@
 #stage{gap:12px;align-items:stretch}
 .branchPane{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;border:1px solid #39424c;border-radius:13px;overflow:hidden}
 .branchPane.selected{border-color:var(--accent)}
-.branchHead{box-sizing:border-box;min-height:44px;border:0;border-bottom:1px solid #39424c;background:var(--panel2);color:var(--ink);padding:5px 8px;font:800 13px var(--body);text-align:left;cursor:pointer}
+.branchHead{box-sizing:border-box;height:44px;min-height:44px;overflow:hidden;line-height:16px;border:0;border-bottom:1px solid #39424c;background:var(--panel2);color:var(--ink);padding:5px 8px;font:800 13px var(--body);text-align:left;cursor:pointer}
 .branchPane.selected .branchHead{color:var(--accent)}
-.branchStats{background:var(--panel);color:var(--muted);padding:3px 8px;font-size:11px;font-variant-numeric:tabular-nums;min-height:15px}
+.branchStats{flex:none;background:var(--panel);color:var(--muted);padding:3px 8px;font-size:11px;line-height:15px;font-variant-numeric:tabular-nums;min-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .branchScene{position:relative;display:flex;align-items:center;justify-content:center;flex:1;min-height:0}
 .branchScene canvas{max-width:100%;max-height:100%;border-radius:0}
 /* Ordinary in-branch cards need a margin; full-screen screens do not. */
@@ -21,8 +22,7 @@
 .cityCourierFrame[data-ready="1"]+.cityCourierLoading{display:none}
 .branchScene #ov .card>*{flex-shrink:0}
 .branchArrow{display:none;font-size:20px;line-height:20px}
-#saveNotice{font-size:11px;color:var(--gold);background:var(--panel);padding:4px 8px;border-radius:6px}
-#networkTotals{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center}
+#networkTotals{flex:none;font-size:11px;line-height:15px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .networkHelp{font-size:12px;color:var(--gold);line-height:1.4}
 @media(min-width:701px){
   #app{max-width:680px}
@@ -39,12 +39,15 @@
   #app.dual #hDay{grid-area:1/1} #app.dual #hTime{grid-area:1/2} #app.dual #hCash{grid-area:1/3}
   #app.dual #hStars{grid-area:1/4} #app.dual #hGoal{grid-area:1/5} #app.dual #hCombo{grid-area:1/6}
   #app.dual #bLang{grid-area:1/7} #app.dual #bPause{grid-area:1/8}
-  #app.dual #hud #evt{grid-area:2/1/3/9;white-space:normal}
   /* Branch headings already identify both visible points on desktop. */
   #app.dual #networkBar{display:none}
-  /* Keep the reversible opening action accessible until the first shift. */
-  #app.dual #networkBar:has(#bCancelExpansion:not([hidden])){display:flex}
-  .branchHead{min-height:36px}
+  /* Keep the reversible opening action accessible until the first shift. It shares
+     the row of the network totals, so the fields do not move when it goes. */
+  #app.dual #networkBar:has(#bCancelExpansion:not([hidden])){display:flex;justify-content:flex-end;position:relative;z-index:2;height:28px;min-height:0;margin-bottom:calc(-28px - var(--gap));transform:translateY(-3px);pointer-events:none}
+  #app.dual #networkBar #bCancelExpansion{pointer-events:auto}
+  #app.dual #networkBar:has(#bCancelExpansion:not([hidden])) #branchLabel{display:none}
+  #app.dual:has(#bCancelExpansion:not([hidden])) #networkTotals{text-align:left}
+  .branchHead{height:36px;min-height:0;padding-block:3px;font-size:12px;line-height:14px}
 }
 @media(max-width:700px){
   #app{padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
@@ -58,7 +61,6 @@
   #hStars{grid-area:2/1}
   #hGoal{grid-area:2/2}
   #hCombo{grid-area:2/3}
-  #hud #evt{grid-column:1/-1;grid-row:3;white-space:normal}
   #bLang,#bPause{box-sizing:border-box;min-width:44px;min-height:44px}
   #bLang{grid-area:1/4/3/5}
   #bPause{grid-area:1/5/3/6}
@@ -66,15 +68,14 @@
   #bExpand{min-height:44px}
   #app.dual .branchPane:not(.selected){display:none}
   #app.dual .branchArrow{display:block;box-sizing:border-box;flex:0 0 44px;min-width:44px;min-height:44px}
-  /* A long cancellation label needs a second row, not a squeezed district name. */
-  #app.dual #networkBar:has(#bCancelExpansion:not([hidden])){flex-wrap:wrap}
-  #app.dual #networkBar:has(#bCancelExpansion:not([hidden])) #bCancelExpansion{box-sizing:border-box;flex:1 0 100%;min-height:44px}
+  /* The long cancellation label takes two lines of the same row: the row keeps its height. */
+  #app.dual #bCancelExpansion{box-sizing:border-box;flex:none;width:min-content;min-height:44px;padding:2px 9px;font-size:11px;line-height:1.15}
   #slots .slot{box-sizing:border-box;width:44px;height:44px;flex:0 0 44px}
   .branchScene .card :is(.btn,.pick,.rbtn,.hire,.fire,.item button,.testrow button){min-height:44px}
   #stage{gap:0}
 }
 @media(max-height:650px){
-  #app{gap:3px;padding-block:3px}
+  #app{--gap:3px;gap:3px;padding-block:3px}
   .branchStats{padding-block:1px}
   .branchHead{padding-block:3px}
   #networkBar{min-height:25px}

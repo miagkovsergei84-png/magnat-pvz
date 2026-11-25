@@ -204,7 +204,7 @@
   .vhouse--offer .vhouse__money dd { margin-top: 2px; font-size: 17px; }
   .vhouse--offer .vhouse__terms { font-size: 12px; }
   .vhouse--offer .vhouse__actions:not(:empty) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-top: 11px; }
-  .vhouse--offer .vhouse__actions button { min-width: 0; padding: 6px 8px; font-size: 14px; }
+  .vhouse--offer .vhouse__actions button { min-width: 0; padding: 6px 8px; font-size: 14px; min-height: 48px; }
   .vhouse--offer .vhouse__quiet { flex-direction: column; }
 }
 @media (min-width:375px) and (max-width:620px) and (min-height:650px) {
@@ -264,6 +264,7 @@
   gap: 0;
 }
 .vhouse--search .vhouse__pane { height: 100%; }
+.vhouse--search .vhouse__pane, .vhouse--search .vhouse__hunt { position: relative; }
 .vhouse--search .vhouse__main, .vhouse--search .vhouse__hunt { flex: 1; align-items: stretch; }
 .vhouse--search .vhouse__head { background: var(--vh-paper); padding: 12px; margin: 0; }
 .vhouse--search .vhouse__room-head {
@@ -277,10 +278,9 @@
 }
 .vhouse--search .vhouse__location { font-size: 12px; color: #e5d7b6; }
 .vhouse--search .vhouse__identity h2 { color: #fff3d6; font-size: clamp(20px,2.1vw,30px); }
-.vhouse--search .vhouse__count { white-space: nowrap; font-weight: 700; font-size: 15px; color: inherit; }
+.vhouse--search .vhouse__count { display: inline-block; text-align: right; white-space: nowrap; font-weight: 700; font-size: 15px; color: inherit; }
 .vhouse--search .vhouse__progress { text-align: right; margin-left: auto; }
 .vhouse--search .vhouse__pan-help { display: block; font-size: 11px; color: #e5d7b6; }
-.vhouse--search .vhouse__pan-help[hidden] { display: none; }
 .vhouse--search .vhouse__viewport {
   flex: 1;
   min-height: 0;
@@ -342,7 +342,7 @@
   background: transparent;
 }
 .vhouse--search .vhouse__targets li + li::before { content: '·'; color: #826739; margin-right: 10px; }
-.vhouse--search .vhouse__tools { flex: none; flex-wrap: nowrap; gap: 6px; }
+.vhouse--search .vhouse__tools { flex: none; flex-wrap: nowrap; gap: 6px; min-height: 44px; }
 .vhouse--search .vhouse__outcome { margin: 0; }
 .vhouse--search .vhouse__status:not(:empty):not(.vhouse__status--error) {
   position: absolute;
@@ -353,12 +353,21 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
+/* A failed save or a picture that did not load speaks over the panel below the
+   picture: the picture keeps its size. */
 .vhouse--search .vhouse__status--error, .vhouse--search .vhouse__actions:not(:empty) {
-  position: static;
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
   margin: 0;
-  padding: 6px 14px;
+  padding: 6px max(14px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+  border: 0;
   background: var(--vh-paper);
 }
+.vhouse--search .vhouse__status--error:not(:empty) { bottom: calc(56px + env(safe-area-inset-bottom)); }
+.vhouse--search .vhouse__status--error:not(:empty):has(+ .vhouse__actions:empty) { bottom: 0; }
 @media (max-width:620px) {
   .vhouse--search .vhouse__room-head { padding-left: max(10px,env(safe-area-inset-left)); padding-right: max(10px,env(safe-area-inset-right)); }
   .vhouse--search .vhouse__finds { flex-direction: column; align-items: stretch; padding-left: max(10px,env(safe-area-inset-left)); padding-right: max(10px,env(safe-area-inset-right)); }
@@ -369,7 +378,7 @@
   .vhouse--search .vhouse__tools > button { flex: 1; min-height: 44px; font-size: 14px; }
   .vhouse--search .vhouse__targets { max-height: 6.5em; overflow-y: auto; }
   .vhouse--search .vhouse__room-head { gap: 5px; }
-  .vhouse--search .vhouse__tools { gap: 4px; margin-left: 3px; }
+  .vhouse--search .vhouse__tools { gap: 4px; margin-left: 3px; min-width: 92px; }
   .vhouse--search .vhouse__tools button { position: relative; width: 44px; padding: 0; }
   .vhouse--search .vhouse__tool-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .vhouse--search .vhouse__tool-hint::before { content: '?'; font: bold 23px/1 Georgia,serif; }
@@ -436,6 +445,8 @@
   color: #fff3da; background: linear-gradient(#b04a29, #84301a);
 }
 .vhouse:not(.vhouse--search) .vhouse__choice:is([aria-pressed="true"],[aria-checked="true"]) :is(.vhouse__label,.vhouse__perk,.vhouse__style) { color: #fff3da; }
+/* The tick has its place before the card is chosen: choosing moves nothing. */
+.vhouse:not(.vhouse--search) .vhouse__label::after { content: ' ✓'; content: ' ✓' / ''; color: transparent; }
 .vhouse:not(.vhouse--search) .vhouse__choice:is([aria-pressed="true"],[aria-checked="true"]) .vhouse__label::after { content: ' ✓'; color: #fff3da; }
 .vhouse--offer .vhouse__choice::before { display: none; }
 .vhouse:not(.vhouse--search) .vhouse__pic { background: #3a2112; }
@@ -480,7 +491,7 @@
   .vhouse--repair .vhouse__summary { margin-top: 3px; font-size: 12px; line-height: 1.28; }
   .vhouse--repair .vhouse__main { flex: 1; }
   .vhouse--repair .vhouse__actions:not(:empty) { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0,1fr); gap: 7px; margin-top: 9px; padding: 0; border: 0; background: none; }
-  .vhouse--repair .vhouse__actions button { min-width: 0; padding: 6px 8px; font-size: 14px; }
+  .vhouse--repair .vhouse__actions button { min-width: 0; padding: 6px 8px; font-size: 14px; min-height: 48px; }
   .vhouse .vhouse__select .vhouse__choice { grid-template-columns: minmax(84px,27%) minmax(0,1fr); min-height: 0; }
   .vhouse--offer .vhouse__select .vhouse__pic { height: 100%; min-height: 64px; max-height: 92px; }
   .vhouse--repair { width: 100%; }
@@ -491,6 +502,7 @@
 }
 /* A low screen keeps the list and the terms; the list carries its own pictures. */
 @media (max-width:620px) and (max-height:700px) { .vhouse--offer .vhouse__preview { display: none; } }
+@media (max-width:359px) { .vhouse--repair .vhouse__actions button, .vhouse--offer .vhouse__actions button { min-height: 65px; } }
 @media (max-width:620px) and (max-height:600px) {
   .vhouse--repair .vhouse__summary { font-size: 11px; line-height: 1.2; }
   .vhouse--repair .vhouse__preview { height: 96px; }

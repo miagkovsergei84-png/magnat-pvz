@@ -2,20 +2,42 @@
    duplicate branch heading costs a sizeable part of a phone's game field. */
 body[data-wallpaper] #app:not(.dual) #branch1>.branchHead{display:none}
 
-/* The hint keeps one height for the whole shift (#app.onShift): texts of one or
-   two lines and an empty hint must not resize the field below the player's
-   finger. An empty hint is still not an empty black bar, and outside a shift it
-   gives its place to the windows. Every hint fits two lines from 360 px
-   up, three below that and one above two wide branches
-   (tests/browser-shift-field-stability-20261125.cjs).
+/* The field has one size before, during and after a shift. The hint keeps its
+   slot: texts of one or two lines, an empty hint and the end of the shift must not
+   resize the field below the player's finger. An empty hint is still not an empty
+   black bar, and outside a shift the windows reach over its slot (--ov-drop).
+   Every hint fits two lines from 360 px up, three below that and one above two
+   wide branches. A save notice lies on the slot too. Events, sums, trip goals,
+   the network line and the cancellation button stay in rows of a fixed height
+   (tests/browser-shift-field-stability-20261125.cjs,
+   tests/browser-field-size-scenarios-20261125.cjs).
    Settings cover the live board, so its unrelated HUD and hands remain out of
    sight until settings close. */
-#hint{box-sizing:border-box;flex:none;height:30px;display:flex;align-items:center;justify-content:center;line-height:14px}
+#app{--hint-slot:30px;--ov-drop:0px}
+/* On a wide screen the hint stands beside the field and the windows keep to it. */
+@media(max-width:700px),(orientation:portrait){#app:not(.onShift):not(:has(#saveNotice:not([hidden]))){--ov-drop:calc(var(--hint-slot) + var(--gap))}}
+#hint{box-sizing:border-box;flex:none;height:var(--hint-slot);display:flex;align-items:center;justify-content:center;line-height:14px}
 #hint,body[data-wallpaper] #hint{padding:1px 7px}
 #hint:empty{visibility:hidden}
-#app:not(.onShift) #hint:empty{display:none}
-@media(max-width:359px){#hint{height:41px;font-size:11px;line-height:13px}}
-@media(min-width:701px){#app.dual #hint{height:22px}}
+#ov{bottom:calc(-1*var(--ov-drop))}
+#app:not(.onShift) .branchPane{overflow:visible}
+#app:not(.onShift) .branchScene>#ov{border-bottom-left-radius:12px;border-bottom-right-radius:12px}
+.branchPane>.branchStats,.branchPane>.branchHead{border-radius:12px 12px 0 0}
+#app.dual .branchPane>.branchStats{border-radius:0}
+@media(max-width:359px){#app{--hint-slot:41px}#hint{font-size:11px;line-height:13px}}
+@media(min-width:701px){#app.dual{--hint-slot:22px}#app.dual:not(.onShift):not(:has(#saveNotice:not([hidden]))){--ov-drop:0px}}
+#saveNotice{box-sizing:border-box;flex:none;position:relative;z-index:3;height:var(--hint-slot);margin-top:calc(-1*var(--hint-slot) - var(--gap));display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;padding:1px 8px;border:1px solid var(--gold);border-radius:7px;background:#2b2415;color:var(--gold);font-size:11px;line-height:13px;text-align:center;pointer-events:none}
+@media(max-width:359px){#saveNotice{-webkit-line-clamp:3}}
+/* The event of the day stands beside the name of the place. */
+#networkBar #evt{flex:0 1 auto;min-width:0;box-sizing:border-box;padding:2px 8px;border-radius:7px;background:#e58438;color:#20170f;font-size:11px;line-height:18px;overflow:hidden;text-overflow:ellipsis}
+/* Beside the trip's name: the goals button comes and goes, its row stays. */
+#app.onTrip #networkBar{min-height:44px}
+/* One row for the name and, under it, the event while the capital offers its centre. */
+@media(max-width:700px){
+  #networkBar:has(#bExpand:not([hidden])){position:relative}
+  #networkBar:has(#bExpand:not([hidden])):has(#evt:not([hidden])) #branchLabel{align-self:flex-start}
+  #networkBar:has(#bExpand:not([hidden])) #evt{position:absolute;left:0;bottom:0;max-width:58%;padding-block:1px;line-height:17px}
+}
 body:has(#ov:not([hidden]) [data-a="audioClose"]) :is(#hud,#networkBar,#networkTotals,#hint,#tray,.branchHead,.branchStats){visibility:hidden;pointer-events:none}
 
 /* Hand slots remain a single row and keep the same height as they fill. */
@@ -66,7 +88,10 @@ body:has(#ov:not([hidden]) [data-a="audioClose"]) :is(#hud,#networkBar,#networkT
   body[data-wallpaper] #app:not(.dual) #hud .ibtn{min-width:44px;min-height:44px}
   body[data-wallpaper] #app:not(.dual) #networkBar{grid-column:1;grid-row:2;width:100%}
   body[data-wallpaper] #app:not(.dual) #networkTotals{grid-column:1;grid-row:3}
-  body[data-wallpaper] #app:not(.dual) #saveNotice{grid-column:1;grid-row:4}
+  body[data-wallpaper] #app:not(.dual) #saveNotice{grid-column:1;grid-row:4;width:100%;height:auto;margin-top:0;-webkit-line-clamp:5}
+  body[data-wallpaper] #app:not(.dual) #networkBar{flex-wrap:wrap}
+  body[data-wallpaper] #app:not(.dual) #branchLabel{flex:1 1 auto}
+  body[data-wallpaper] #app:not(.dual) #evt{flex:none}
   body[data-wallpaper] #app:not(.dual) #hint{grid-column:1;grid-row:5;width:100%;height:auto;display:block;box-sizing:border-box;padding:3px 7px;line-height:1.35}
   body[data-wallpaper] #app:not(.dual) #hint:empty{display:none}
   body[data-wallpaper] #app:not(.dual) #tray{grid-column:3;grid-row:1;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label sound" "slots slots";gap:4px 8px}

@@ -1797,6 +1797,7 @@ function syncHud(){
   $('hStars').textContent='★'+displayedRating(stars());
   const playing=G&&mode==='play';
   $('app').classList.toggle('onShift',!!playing);
+  $('app').classList.toggle('onTrip',!!NETWORK?.away);
   const toolsButton=$('bHouseTools');
   if(toolsButton){
     toolsButton.hidden=!(playing&&(perksHome()||townToolsAvailable())&&!menuOpen&&!paused&&!networkPaused&&!settingsOpen);
@@ -1807,7 +1808,8 @@ function syncHud(){
   $('hGoal').hidden=!playing;$('hCombo').hidden=!playing;
   $('hGoal').classList.toggle('goal--reached',!!(playing&&G.st.served>=G.cfg.goal));
   if(playing){$('hGoal').textContent=G.st.served+'/'+G.cfg.goal;const m=mult();$('hCombo').textContent=(lang==='ru'?'Комбо ×':'Combo ×')+fmtNum(m);$('hCombo').classList.toggle('hot',m>1);}
-  const ev=playing?G.ev:null;$('evt').hidden=!ev;if(ev)$('evt').textContent=t(ev);
+  // With two branches each heading names the event of its own branch.
+  const ev=playing&&NETWORK?.branches.length!==2?G.ev:null;$('evt').hidden=!ev;if(ev)$('evt').textContent=t(ev);
   $('bLang').textContent=lang==='ru'?'EN':'RU';$('tLbl').textContent=t('hands');
   $('bSound').textContent=t('sound');$('bSound').setAttribute('aria-label',t('soundSettings'));
   $('hint').textContent=hintText();
@@ -3797,7 +3799,7 @@ function syncNetworkHud(){
       branch.state.evDay===branch.state.day?branch.state.ev:null;
     if(pane.dataset)pane.dataset.wallpaperSeason=event==='ny'?'winter':'normal';
     const label=NETWORK.away?PptPostgameUI.placeName(lang,NETWORK.away.location):capital?(branch.id===1?(ru?'Окраина':'Outskirts'):(ru?'Центр':'Downtown')):(ru?'ПВЗ ':'Branch ')+branch.id;
-    $('bBranch'+branch.id).textContent=label+(NETWORK.away?'':' · '+t('day',displayedDay(branch.state,branch.status,branch.summary)))+' · '+branchStatus(branch);
+    $('bBranch'+branch.id).textContent=label+(NETWORK.away?'':' · '+t('day',displayedDay(branch.state,branch.status,branch.summary)))+(opened&&branch.status==='play'&&event?' · '+t(event):'')+' · '+branchStatus(branch);
     $('bBranch'+branch.id).setAttribute('aria-pressed',String(branch.id===NETWORK.activeId));
     $('bBranch'+branch.id).title=branch.id===NETWORK.activeId
       ?(ru?'Вы управляете этим ПВЗ. Кассиры обслуживают все его окна.':'You manage this branch. Cashiers serve all its windows.')
@@ -3812,7 +3814,8 @@ function syncNetworkHud(){
   $('networkTotals').hidden=!opened;
   const live=NETWORK.branches.filter(branch=>branch.status==='play');
   const catchingUp=live.length>1&&Math.max(...live.map(branch=>branch.runtime.clock))-Math.min(...live.map(branch=>branch.runtime.clock))>1e-8;
-  $('networkTotals').textContent=(ru?'Сеть · смен: ':'Network · shifts: ')+(NETWORK.totals.days+(NETWORK.postgame?.trips??0))+' · '+(ru?'выдано: ':'served: ')+served+' · '+(ru?'выручка: ':'revenue: ')+money(revenue)+(catchingUp?' · '+t('networkCatchup'):'');
+  // One line: while a branch catches up, the line says only that.
+  $('networkTotals').textContent=catchingUp?t('networkCatchup'):(ru?'Сеть · смен: ':'Network · shifts: ')+(NETWORK.totals.days+(NETWORK.postgame?.trips??0))+' · '+(ru?'выдано: ':'served: ')+served+' · '+(ru?'выручка: ':'revenue: ')+money(revenue);
   const storyCampaign=PptNetwork.isStoryCampaign(NETWORK);
   const expand=$('bExpand'),capitalExpansion=PptNetwork.isCapitalCampaign(NETWORK),terms=PptNetwork.expansionTerms(NETWORK);
   expand.hidden=opened||(storyCampaign&&!capitalExpansion);

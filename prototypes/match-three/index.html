@@ -116,7 +116,7 @@ button.tutorial-focus:not(:disabled){position:relative;border-color:#92e0ff;outl
 .fine-guide ul{margin:5px 0 0;padding:7px 5px 6px 20px;background:#172432;border:1px solid #425268;border-radius:9px}
 .fine-guide li+li{margin-top:5px}
 @media(max-height:660px){.identity .eyebrow .brand{display:none}}
-@media(min-width:760px) and (min-height:740px){
+@media(min-width:760px) and (min-height:740px) and (orientation:landscape){
   .arcade{width:min(100%,744px);--gap:8px;--brief-h:166px;--helpers-h:82px;--controls-h:84px;grid-template-columns:minmax(0,442px) minmax(0,294px);grid-template-rows:auto;grid-template-areas:"field rail";align-items:start}
   .board-column,.game-rail{display:flex;flex-direction:column;gap:var(--gap);min-width:0}
   .board-column{grid-area:field}.game-rail{grid-area:rail}
@@ -126,17 +126,17 @@ button.tutorial-focus:not(:disabled){position:relative;border-color:#92e0ff;outl
   .tool canvas{width:36px;height:36px;flex-basis:36px}
   .controls{flex-wrap:wrap;justify-content:flex-end;gap:4px}.controls button{min-width:48px;min-height:40px}.message,#campaignSaveStatus{flex:1 0 100%;max-height:28px;scrollbar-width:none}.tutorial-skip{min-width:48px}
 }
-/* Phones, small tablets and low windows: the whole game is on one screen, the
+/* Phones, tablets held upright and low windows: the whole game is on one screen, the
    buttons are always visible and nothing scrolls. The board keeps the full
    width and shrinks only when the screen is too low for the smallest panels;
    the panels share the height left over (--spare). Track sizes depend on the
    viewport alone, so the board stays still in every stage and exercise.
    Measured in tests/browser-match-three-fit-20261125.cjs. */
-@media(max-width:759px),(max-height:739px){
+@media(max-width:759px),(max-height:739px),(orientation:portrait){
   html,body{height:100%}
-  body{--vh:100vh;--pad:8px;min-height:0;padding:var(--pad)}
+  body{--screen:100vh;--vh:calc(var(--screen)/var(--s,1));--vw:calc(100vw/var(--s,1));--pad:8px;min-height:0;padding:calc(var(--pad)*var(--s,1))}
   .arcade{--chrome-min:228px;
-    --board-w:min(100vw - 2*var(--pad),442px,max(284px,(var(--vh) - 2*var(--pad) - var(--chrome-min) - 12px)*.875));
+    --board-w:min(var(--vw) - 2*var(--pad),442px,max(284px,(var(--vh) - 2*var(--pad) - var(--chrome-min) - 12px)*.875));
     --board-h:calc(var(--board-w)*8/7);
     --spare:max(0px,var(--vh) - 2*var(--pad) - var(--board-h) - var(--chrome-min));
     /* The buttons grow first, then every panel takes its part of the rest. */
@@ -244,7 +244,12 @@ button.tutorial-focus:not(:disabled){position:relative;border-color:#92e0ff;outl
   }
   @container (min-height:72px){.controls button{min-height:42px}}
 }
-@supports(height:100dvh){@media(max-width:759px),(max-height:739px){body{--vh:100dvh}}}
+@supports(height:100dvh){@media(max-width:759px),(max-height:739px),(orientation:portrait){body{--screen:100dvh}}}
+/* A tablet held upright shows the phone screen enlarged (--s, set below). */
+@media(orientation:portrait) and (min-width:600px){
+  .arcade{flex:none;width:442px;transform:scale(var(--s,1));transform-origin:50% 0}
+  .fine-guide ul{left:0;right:0;top:calc(var(--hud-h) + var(--gap));max-height:calc(var(--vh) - 3*var(--pad) - var(--hud-h))}
+}
 @media(max-width:360px){body{--pad:6px}}
 /* A low wide window (a phone or a small tablet on its side): the board takes
    the height, every panel stands beside it. */
@@ -262,7 +267,7 @@ button.tutorial-focus:not(:disabled){position:relative;border-color:#92e0ff;outl
   .fine-guide ul{left:auto;right:max(var(--pad),(100vw - var(--board-w) - 8px - var(--rail-w))/2);width:var(--rail-w);margin:0}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}button.tutorial-focus:not(:disabled),.training-cell-cue::before{animation-duration:1.5s}}
-</style></head><body>
+</style><script>(()=>{const fit=()=>{const w=innerWidth,h=innerHeight;document.documentElement.style.setProperty('--s',w>=600&&h>=w?String(Math.max(1,Math.min(w/458,h/790))):'1');};addEventListener('resize',fit);fit();})();</script></head><body>
 <main class="arcade">
 <div class="board-column">
 <header class="hud"><div class="identity"><div class="eyebrow"><span class="brand">МАГНАТ ПВЗ</span><span id="phase" class="phase">БОЕВАЯ ПАРТИЯ</span></div><h1 id="stageName">Сортировочный центр</h1></div><div class="moves"><small>ХОДЫ</small><b id="moves">32</b><span class="stars" id="stars" aria-label="Звёзды">☆☆☆</span></div></header>
