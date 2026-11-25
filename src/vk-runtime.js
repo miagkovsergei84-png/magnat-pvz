@@ -101,13 +101,14 @@ globalThis.PptVkRuntime = (() => {
       const init = early && early.init && typeof early.init.then === 'function' ? early.init : call('VKWebAppInit', {});
       const answered = Promise.resolve(init).then(data => !!data && data.result === true, () => false);
       // VK Web and Mobile Web process only the first Init of their page. After
-      // the game reloads itself inside it, Init stays unanswered although VK is
-      // there: an answer seen earlier in this tab stands in for it.
+      // the game reloads itself inside it, VK turns Init down or leaves it
+      // unanswered, yet serves other requests (seen in VK Web): an answer
+      // seen earlier in this tab stands in for it.
       let known = false;
       try { known = !!session && session.getItem(INIT_KEY) === '1'; } catch (_) {}
       ready = !known ? answered : new Promise(resolve => {
         const wait = timers.setTimeout(() => resolve(true), INIT_WAIT);
-        answered.then(ok => { timers.clearTimeout(wait); resolve(ok); });
+        answered.then(() => { timers.clearTimeout(wait); resolve(true); });
       });
       answered.then(ok => { if (ok) try { session && session.setItem(INIT_KEY, '1'); } catch (_) {} });
       if (doc && typeof doc.addEventListener === 'function') {
