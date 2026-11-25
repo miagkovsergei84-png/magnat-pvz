@@ -5,16 +5,24 @@
 .campaignGoalButton--ready{border-color:#5bd6ff;background:#218853;animation:campaignGoalReady 1.5s ease-in-out infinite}
 @keyframes campaignGoalReady{0%,100%{background-color:#218853;box-shadow:0 0 0 1px #5bd6ff80}50%{background-color:#299b7b;box-shadow:0 0 0 4px #5bd6ff9c,0 0 15px #5bd6ff80}}
 
-/* Completed goals pulse without hiding text or changing their layout. The
-   separate ring stays non-interactive and contracts/expands around the goal. */
-.campaignGoal--done,.goal.ok,#hGoal.goal--reached{position:relative;isolation:isolate;animation:goalCompletedBlink 1.5s ease-in-out infinite}
-.campaignGoal--done::after,.goal.ok::after,#hGoal.goal--reached::after,.campaignGoalButton--progress::after,.campaignGoalButton--ready::after{
+/* Only a complete set of goals pulses (owner, 25.11): the map button and the
+   list draw the eye once in the first lesson ([data-guide-highlight]) and then
+   when every goal is reached. A single reached goal is only green. The ring
+   stays non-interactive and contracts/expands around the goal. */
+.campaignGoal--done,.goal.ok{position:relative;isolation:isolate}
+.campaignGoals:not(:has(.campaignGoal:not(.campaignGoal--done))) .campaignGoal--done,.goals:not(:has(.goal:not(.ok))) .goal.ok,#hGoal.goal--reached{position:relative;isolation:isolate;animation:goalCompletedBlink 1.5s ease-in-out infinite}
+.campaignGoals:not(:has(.campaignGoal:not(.campaignGoal--done))) .campaignGoal--done::after,.goals:not(:has(.goal:not(.ok))) .goal.ok::after,#hGoal.goal--reached::after,.campaignGoalButton--ready::after{
   content:"";position:absolute;inset:0;border:2px solid #5bd6ff;border-radius:inherit;pointer-events:none;box-sizing:border-box;
   animation:goalCompletedFrame 1.5s ease-in-out infinite;
 }
-#hGoal.goal--reached::after,.campaignGoalButton--progress::after,.campaignGoalButton--ready::after{inset:2px}
+#hGoal.goal--reached::after,.campaignGoalButton--ready::after{inset:2px}
 @keyframes goalCompletedBlink{0%,100%{background-color:#203a33}50%{background-color:#27605d}}
 @keyframes goalCompletedFrame{0%,100%{opacity:.12;transform:scale(.985);box-shadow:0 0 0 0 #5bd6ff33}45%,55%{opacity:1;transform:scale(1.015);box-shadow:0 0 9px 2px #5bd6ffdd}}
+
+/* A new upgrade in the shop: a blue frame on the day it opens and while its
+   first lesson is on the screen. */
+.itemNew{outline:2px solid #5bd6ff;outline-offset:1px;animation:itemNewFrame 1.4s ease-in-out infinite}
+@keyframes itemNewFrame{0%,100%{outline-color:#5bd6ff33;box-shadow:0 0 0 0 #5bd6ff00}50%{outline-color:#5bd6ff;box-shadow:0 0 0 3px #5bd6ff55,0 0 14px #5bd6ffaa}}
 
 /* A free staff slot and an affordable candidate make the team button useful. */
 .hireAvailable{position:relative;isolation:isolate}
@@ -23,5 +31,6 @@
 @media(prefers-reduced-motion:reduce){
   .campaignGoalButton__fill{transition:none}
   .campaignGoalButton--ready{animation:none;box-shadow:0 0 0 2px #5bd6ff}
-  .campaignGoal--done::after,.goal.ok::after,#hGoal.goal--reached::after,.campaignGoalButton--progress::after,.campaignGoalButton--ready::after,.hireAvailable::after{animation:none;opacity:1;transform:none}
+  .campaignGoals:not(:has(.campaignGoal:not(.campaignGoal--done))) .campaignGoal--done::after,.goals:not(:has(.goal:not(.ok))) .goal.ok::after,#hGoal.goal--reached::after,.campaignGoalButton--ready::after,.hireAvailable::after{animation:none;opacity:1;transform:none}
+  .itemNew{animation:none;outline-color:#5bd6ff}
 }

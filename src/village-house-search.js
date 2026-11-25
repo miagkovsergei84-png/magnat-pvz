@@ -1,4 +1,7 @@
-// The paintings use a shared 1536 × 1024 coordinate system. Each prop is a removable layer.
+// The paintings use a shared 1536 × 1024 coordinate system. Each prop is a removable
+// layer cut from the approved painting (tools/build-search-props.py): it keeps its own
+// place, pixels and contact shadow, so a find uncovers the empty room and nothing else.
+// Six things hide behind bigger ones (coveredBy) and stand on a real surface there.
 globalThis.PptVillageSearch=(()=>{
   const rooms=[
     {
@@ -6,43 +9,43 @@ globalThis.PptVillageSearch=(()=>{
       result:["Ключ подошёл. Дверь в зал открыта.","The key fits. The hall door is open."], next:["Войти в зал","Enter the hall"],
       image:'assets/village-houses/clearing/entry-empty.webp', openImage:'assets/village-houses/clearing/entry-open.webp',
       items:[
-        {id:'mitten', name:["Красная варежка","Red mitten"], image:'assets/village-houses/clearing/mitten.webp', x:836, y:819, w:123, h:61, coveredBy:'parcel'},
-        {id:'hat', name:["Соломенная шляпа","Straw hat"], image:'assets/village-houses/clearing/hat.webp', x:544, y:114, w:104, h:116, coveredBy:'basket'},
-        {id:'bell', name:["Ручной колокольчик","Handbell"], image:'assets/village-houses/clearing/bell.webp', x:1196, y:118, w:84, h:125},
-        {id:'mug', name:["Синяя кружка","Blue mug"], image:'assets/village-houses/clearing/mug.webp', x:1328, y:672, w:138, h:118},
-        {id:'brush', name:["Щётка","Brush"], image:'assets/village-houses/clearing/brush.webp', x:647, y:626, w:176, h:125},
-        {id:'umbrella', name:["Зонт-трость","Umbrella"], image:'assets/village-houses/clearing/umbrella.webp', x:809, y:524, w:92, h:290},
-        {id:'boot', name:["Чёрный ботинок","Black ankle boot"], image:'assets/village-houses/clearing/boot.webp', x:413, y:841, w:166, h:143},
-        {id:'parcel', name:["Перевязанная посылка","Wrapped parcel"], image:'assets/village-houses/clearing/parcel.webp', x:836, y:795, w:191, h:188},
-        {id:'leaf', name:["Кленовый лист","Maple leaf"], image:'assets/village-houses/clearing/leaf.webp', x:413, y:869, w:82, h:46, coveredBy:'boot'},
-        {id:'pot', name:["Глиняный горшок","Clay pot"], image:'assets/village-houses/clearing/pot.webp', x:398, y:600, w:167, h:174},
-        {id:'basket', name:["Плетёная корзинка","Wicker basket"], image:'assets/village-houses/clearing/basket.webp', x:544, y:99, w:247, h:155},
-        {id:'knitting', name:["Сумка с вязанием","Knitting bag"], image:'assets/village-houses/clearing/knitting.webp', x:212, y:550, w:155, h:207},
-        {id:'shoe', name:["Деревянный башмак","Wooden clog"], image:'assets/village-houses/clearing/shoe.webp', x:1120, y:741, w:152, h:87},
-        {id:'geranium', name:["Горшок с геранью","Potted geranium"], image:'assets/village-houses/clearing/geranium.webp', x:1398, y:326, w:145, h:167},
-        {id:'key', name:["Старый ключ","Old key"], image:'assets/village-houses/clearing/key.webp', x:212, y:591, w:41, h:111, coveredBy:'knitting'}
+        {id:'mitten', name:["Красная варежка","Red mitten"], image:'assets/village-houses/clearing/mitten.webp', x:378, y:622, w:172, h:106},
+        {id:'hat', name:["Соломенная шляпа","Straw hat"], image:'assets/village-houses/clearing/hat.webp', x:528, y:81, w:100, h:104, coveredBy:'basket'},
+        {id:'bell', name:["Ручной колокольчик","Handbell"], image:'assets/village-houses/clearing/bell.webp', x:1189, y:118, w:70, h:110},
+        {id:'mug', name:["Синяя кружка","Blue mug"], image:'assets/village-houses/clearing/mug.webp', x:1320, y:672, w:136, h:112},
+        {id:'brush', name:["Щётка","Brush"], image:'assets/village-houses/clearing/brush.webp', x:641, y:632, w:180, h:114},
+        {id:'umbrella', name:["Зонт-трость","Umbrella"], image:'assets/village-houses/clearing/umbrella.webp', x:803, y:526, w:84, h:260},
+        {id:'boot', name:["Чёрный ботинок","Black ankle boot"], image:'assets/village-houses/clearing/boot.webp', x:398, y:870, w:158, h:124},
+        {id:'parcel', name:["Перевязанная посылка","Wrapped parcel"], image:'assets/village-houses/clearing/parcel.webp', x:827, y:840, w:192, h:174},
+        {id:'leaf', name:["Кленовый лист","Maple leaf"], image:'assets/village-houses/clearing/leaf.webp', x:397, y:891, w:76, h:44, coveredBy:'boot'},
+        {id:'pot', name:["Глиняный горшок","Clay pot"], image:'assets/village-houses/clearing/pot.webp', x:640, y:114, w:76, h:80},
+        {id:'basket', name:["Плетёная корзинка","Wicker basket"], image:'assets/village-houses/clearing/basket.webp', x:524, y:90, w:186, h:102},
+        {id:'knitting', name:["Сумка с вязанием","Knitting bag"], image:'assets/village-houses/clearing/knitting.webp', x:204, y:554, w:200, h:240},
+        {id:'shoe', name:["Деревянный башмак","Wooden clog"], image:'assets/village-houses/clearing/shoe.webp', x:843, y:851, w:142, h:80, coveredBy:'parcel'},
+        {id:'geranium', name:["Горшок с геранью","Potted geranium"], image:'assets/village-houses/clearing/geranium.webp', x:1401, y:328, w:130, h:160},
+        {id:'key', name:["Старый ключ","Old key"], image:'assets/village-houses/clearing/key.webp', x:223, y:197, w:66, h:218}
       ]
     },
     {
       name:["Зал","Hall"], alt:["Деревянный зал с закрытыми ставнями, прилавком и полками.","A wooden hall with shutters, a counter and shelves."],
-      result:["Скоба встала на место. Откроем ставни и осмотрим кладовую.","The brass pull fits. Open the shutters, then look in the storeroom."], next:["Войти в кладовую","Enter the storeroom"],
+      result:["Ручка встала на место. Откроем ставни и осмотрим кладовую.","The brass handle fits. Open the shutters, then look in the storeroom."], next:["Войти в кладовую","Enter the storeroom"],
       image:'assets/village-houses/clearing/hall-empty.webp', openImage:'assets/village-houses/clearing/hall-open.webp',
       items:[
-        {id:'scissors', name:["Большие ножницы","Large scissors"], image:'assets/village-houses/clearing/scissors.webp', x:480, y:169, w:155, h:232},
-        {id:'twine', name:["Зелёный шпагат","Green twine"], image:'assets/village-houses/clearing/twine.webp', x:835, y:270, w:137, h:213},
-        {id:'ruler', name:["Складной метр","Folding ruler"], image:'assets/village-houses/clearing/ruler.webp', x:1041, y:234, w:171, h:147},
-        {id:'cameo', name:["Камея","Cameo brooch"], image:'assets/village-houses/clearing/cameo.webp', x:524, y:548, w:58, h:61, coveredBy:'tile'},
-        {id:'pitcher', name:["Эмалированный кувшин","Enamel jug"], image:'assets/village-houses/clearing/pitcher.webp', x:1369, y:678, w:273, h:299},
-        {id:'shell', name:["Морская ракушка","Seashell"], image:'assets/village-houses/clearing/shell.webp', x:1072, y:544, w:97, h:68, coveredBy:'sack'},
-        {id:'last', name:["Сапожная колодка","Wooden shoe last"], image:'assets/village-houses/clearing/last.webp', x:503, y:662, w:268, h:142},
-        {id:'letters', name:["Письма в лотке","Letter tray"], image:'assets/village-houses/clearing/letters.webp', x:524, y:538, w:276, h:155},
-        {id:'pegs', name:["Бельевые прищепки","Clothes pegs"], image:'assets/village-houses/clearing/pegs.webp', x:503, y:678, w:106, h:72, coveredBy:'last'},
-        {id:'map', name:["Свёрнутая карта","Rolled map"], image:'assets/village-houses/clearing/map.webp', x:788, y:645, w:410, h:169},
-        {id:'tile', name:["Синяя изразцовая плитка","Blue tile"], image:'assets/village-houses/clearing/tile.webp', x:524, y:548, w:92, h:96, coveredBy:'letters'},
-        {id:'sack', name:["Мешок муки","Flour sack"], image:'assets/village-houses/clearing/sack.webp', x:1072, y:510, w:237, h:230},
-        {id:'scales', name:["Чашечные весы","Balance scales"], image:'assets/village-houses/clearing/scales.webp', x:806, y:447, w:292, h:265},
-        {id:'flowers', name:["Красная герань","Red geranium"], image:'assets/village-houses/clearing/flowers.webp', x:108, y:521, w:213, h:336},
-        {id:'handle', name:["Латунная ручка-скоба","Brass window pull"], image:'assets/village-houses/clearing/handle.webp', x:788, y:645, w:123, h:46, coveredBy:'map'}
+        {id:'scissors', name:["Большие ножницы","Large scissors"], image:'assets/village-houses/clearing/scissors.webp', x:478, y:170, w:136, h:218},
+        {id:'twine', name:["Зелёный шпагат","Green twine"], image:'assets/village-houses/clearing/twine.webp', x:833, y:267, w:120, h:166},
+        {id:'ruler', name:["Складной метр","Folding ruler"], image:'assets/village-houses/clearing/ruler.webp', x:1042, y:233, w:154, h:148},
+        {id:'tile', name:["Синяя изразцовая плитка","Blue tile"], image:'assets/village-houses/clearing/tile.webp', x:531, y:552, w:112, h:100, coveredBy:'letters'},
+        {id:'letters', name:["Письма в лотке","Letter tray"], image:'assets/village-houses/clearing/letters.webp', x:529, y:542, w:264, h:144},
+        {id:'scales', name:["Чашечные весы","Balance scales"], image:'assets/village-houses/clearing/scales.webp', x:809, y:460, w:276, h:242},
+        {id:'map', name:["Свёрнутая карта","Rolled map"], image:'assets/village-houses/clearing/map.webp', x:770, y:637, w:446, h:180},
+        {id:'last', name:["Сапожная колодка","Wooden shoe last"], image:'assets/village-houses/clearing/last.webp', x:537, y:675, w:278, h:132},
+        {id:'sack', name:["Мешок муки","Flour sack"], image:'assets/village-houses/clearing/sack.webp', x:1058, y:528, w:238, h:210},
+        {id:'shell', name:["Морская ракушка","Seashell"], image:'assets/village-houses/clearing/shell.webp', x:1042, y:628, w:94, h:66},
+        {id:'cameo', name:["Камея","Cameo brooch"], image:'assets/village-houses/clearing/cameo.webp', x:951, y:797, w:116, h:112},
+        {id:'pegs', name:["Бельевые прищепки","Clothes pegs"], image:'assets/village-houses/clearing/pegs.webp', x:1327, y:756, w:144, h:94, coveredBy:'pitcher'},
+        {id:'pitcher', name:["Эмалированный кувшин","Enamel jug"], image:'assets/village-houses/clearing/pitcher.webp', x:1369, y:681, w:266, h:296},
+        {id:'flowers', name:["Красная герань","Red geranium"], image:'assets/village-houses/clearing/flowers.webp', x:110, y:532, w:220, h:332},
+        {id:'handle', name:["Латунная ручка","Brass handle"], image:'assets/village-houses/clearing/handle.webp', x:243, y:633, w:190, h:96}
       ]
     },
     {
@@ -50,21 +53,21 @@ globalThis.PptVillageSearch=(()=>{
       result:["Вывеску можно вернуть на место. Дом расчищен!","The sign can go back up. The house is clear!"], next:["Закончить расчистку","Finish clearing"],
       image:'assets/village-houses/clearing/storeroom-empty.webp', openImage:'assets/village-houses/clearing/storeroom-empty.webp',
       items:[
-        {id:'horseshoe', name:["Подкова","Horseshoe"], image:'assets/village-houses/clearing/horseshoe.webp', x:130, y:142, w:123, h:143},
-        {id:'stamp', name:["Почтовый штамп","Postal stamp"], image:'assets/village-houses/clearing/stamp.webp', x:258, y:531, w:75, h:68, coveredBy:'bundle'},
-        {id:'photo', name:["Старая фотография","Old photograph"], image:'assets/village-houses/clearing/photo.webp', x:775, y:280, w:174, h:130},
-        {id:'yarn', name:["Красный клубок","Red ball of yarn"], image:'assets/village-houses/clearing/yarn.webp', x:696, y:800, w:249, h:128},
-        {id:'broom', name:["Веник","Broom"], image:'assets/village-houses/clearing/broom.webp', x:1413, y:391, w:164, h:416},
-        {id:'lantern', name:["Керосиновая лампа","Kerosene lantern"], image:'assets/village-houses/clearing/lantern.webp', x:785, y:108, w:126, h:200},
-        {id:'satchel', name:["Кожаный портфель","Leather satchel"], image:'assets/village-houses/clearing/satchel.webp', x:261, y:509, w:294, h:232},
-        {id:'bundle', name:["Связка писем","Bundle of letters"], image:'assets/village-houses/clearing/bundle.webp', x:261, y:534, w:160, h:106, coveredBy:'satchel'},
-        {id:'sled', name:["Деревянные санки","Wooden sled"], image:'assets/village-houses/clearing/sled.webp', x:829, y:609, w:244, h:147},
-        {id:'fruit', name:["Миска с яблоками","Bowl of apples"], image:'assets/village-houses/clearing/fruit.webp', x:447, y:393, w:123, h:72},
-        {id:'quill', name:["Стакан с перьями","Quill cup"], image:'assets/village-houses/clearing/quill.webp', x:715, y:406, w:68, h:109},
-        {id:'jack', name:["Подставка для сапога","Boot jack"], image:'assets/village-houses/clearing/jack.webp', x:1015, y:689, w:145, h:77},
-        {id:'spool', name:["Катушка бечёвки","Spool of string"], image:'assets/village-houses/clearing/spool.webp', x:785, y:131, w:68, h:48, coveredBy:'lantern'},
-        {id:'case', name:["Старый чемодан","Old suitcase"], image:'assets/village-houses/clearing/case.webp', x:1222, y:536, w:299, h:157},
-        {id:'sign', name:["Эмалевая вывеска","Enamel sign"], image:'assets/village-houses/clearing/sign.webp', x:1220, y:543, w:108, h:111, coveredBy:'case'}
+        {id:'horseshoe', name:["Подкова","Horseshoe"], image:'assets/village-houses/clearing/horseshoe.webp', x:122, y:144, w:106, h:130},
+        {id:'stamp', name:["Почтовый штамп","Postal stamp"], image:'assets/village-houses/clearing/stamp.webp', x:202, y:740, w:140, h:130},
+        {id:'photo', name:["Старая фотография","Old photograph"], image:'assets/village-houses/clearing/photo.webp', x:787, y:294, w:140, h:112},
+        {id:'yarn', name:["Красный клубок","Red ball of yarn"], image:'assets/village-houses/clearing/yarn.webp', x:688, y:806, w:244, h:116},
+        {id:'broom', name:["Веник","Broom"], image:'assets/village-houses/clearing/broom.webp', x:1406, y:397, w:150, h:392},
+        {id:'lantern', name:["Керосиновая лампа","Kerosene lantern"], image:'assets/village-houses/clearing/lantern.webp', x:761, y:123, w:94, h:176},
+        {id:'satchel', name:["Кожаный портфель","Leather satchel"], image:'assets/village-houses/clearing/satchel.webp', x:248, y:555, w:282, h:188},
+        {id:'bundle', name:["Связка писем","Bundle of letters"], image:'assets/village-houses/clearing/bundle.webp', x:351, y:613, w:142, h:70},
+        {id:'sled', name:["Деревянные санки","Wooden sled"], image:'assets/village-houses/clearing/sled.webp', x:834, y:612, w:242, h:152},
+        {id:'fruit', name:["Миска с яблоками","Bowl of apples"], image:'assets/village-houses/clearing/fruit.webp', x:451, y:404, w:108, h:68},
+        {id:'quill', name:["Стакан с перьями","Quill cup"], image:'assets/village-houses/clearing/quill.webp', x:740, y:414, w:52, h:102},
+        {id:'jack', name:["Подставка для сапога","Boot jack"], image:'assets/village-houses/clearing/jack.webp', x:1025, y:684, w:138, h:74},
+        {id:'spool', name:["Катушка бечёвки","Spool of string"], image:'assets/village-houses/clearing/spool.webp', x:243, y:582, w:112, h:78, coveredBy:'satchel'},
+        {id:'case', name:["Старый чемодан","Old suitcase"], image:'assets/village-houses/clearing/case.webp', x:1250, y:535, w:210, h:78},
+        {id:'sign', name:["Эмалевая вывеска","Enamel sign"], image:'assets/village-houses/clearing/sign.webp', x:1294, y:806, w:238, h:274}
       ]
     }
   ];

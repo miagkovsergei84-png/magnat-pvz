@@ -1330,10 +1330,12 @@ function counterOrderLayout(win,items){
 }
 function drawCounterOrders(){
   if(!G)return;
+  const carried=G.p.hands[G.p.act],target=carried&&!carried.r&&lv('scanner')?scannerCustomer(carried):null;
   G.q.forEach((line,win)=>{const customer=line[0];if(!customer||customer.state!=='wait')return;
     const items=customer.ret?[customer.ret]:customer.need,layout=counterOrderLayout(win,items);
     if(customer.claim&&customer.claim!=='p'){ctx.strokeStyle=customer.claim.color;ctx.lineWidth=2.5;rr(layout.x,layout.y,layout.width,layout.height,5);ctx.stroke();}
     else if(customer.prime){ctx.strokeStyle='#ffd166';ctx.lineWidth=2;rr(layout.x,layout.y,layout.width,layout.height,5);ctx.stroke();}
+    if(customer===target){ctx.save();ctx.strokeStyle='#66dbff';ctx.lineWidth=3;ctx.globalAlpha=.8+.2*Math.sin(G.clock*6);rr(layout.x-2,layout.y-2,layout.width+4,layout.height+4,6);ctx.stroke();ctx.restore();}
     layout.boxes.forEach(item=>drawBox(item.x,item.y,{...item.box,r:!!customer.ret},WORLD_BOX_SIZE));
     if(customer.cod){const x=Math.min(layout.x+layout.width-2,(win+1)*W/nWin()-7),y=layout.y+1;ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x,y,6,0,7);ctx.fill();txt('$',x,y+.5,9,'#3a2d05',800);}
   });
@@ -1355,9 +1357,18 @@ function drawShelfHeaders(cfg){
 function txt(s,x,y,size,col,weight,align){ctx.font=(weight||800)+' '+size+'px Nunito, sans-serif';ctx.fillStyle=col;ctx.textAlign=align||'center';ctx.textBaseline='middle';ctx.fillText(s,x,y);}
 function ring(x,y,r,col){ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.stroke();}
 function patColor(fr){return fr>.5?'#4cd18a':fr>.25?'#f3c934':'#ff5d5d';}
+// The customer this parcel is carried to: the one the player is walking to, or
+// the first in a line who waits for exactly this parcel and is not being served
+// by somebody else. The scanner then points at the order, not at the shelf.
+function scannerCustomer(b){
+  const needs=q=>!!q&&q.state==='wait'&&!q.ret&&q.need.some(n=>n.c===b.c&&n.s===b.s);
+  const walking=G.p.tg?.k==='give'?G.p.tg.ref:G.p.tg?.k==='fetch'?G.p.tg.cu:null;
+  if(needs(walking))return walking;
+  return G.q.map(line=>line[0]).find(q=>needs(q)&&isFront(q)&&(!q.claim||q.claim==='p'))||null;
+}
 function scannerDestination(){
   const b=G?.p.hands[G.p.act];
-  if(!b||b.r||!lv('scanner'))return null;
+  if(!b||b.r||!lv('scanner')||scannerCustomer(b))return null;
   if(b.cold!=null&&fridgeOn()){
     const i=S.fridge.indexOf(null);
     return {rect:i<0?FRIDGE:fzRect(i),full:i<0};
@@ -1515,9 +1526,11 @@ function drawScene(){
     }
     ctx.restore();
   }
-  if(lv('cooler')&&!globalThis.PptEnvironmentSample?.cooler(ctx,winX(0)-6,-WAIT_EXT)){ctx.fillStyle='#cfe7f5';rr(4,-WAIT_EXT+4,12,20,3);ctx.fill();ctx.fillStyle='#5bb6e6';rr(5,-WAIT_EXT,10,8,3);ctx.fill();}
-  if(lv('coffee')&&!globalThis.PptEnvironmentSample?.coffee(ctx,winX(0)+18,-WAIT_EXT+6)){ctx.fillStyle='#6b4a36';rr(19,-WAIT_EXT+6,14,16,3);ctx.fill();ctx.fillStyle='#d9c0a0';ctx.fillRect(23,-WAIT_EXT+14,6,5);}
-  if(lv('tv')&&!globalThis.PptEnvironmentSample?.tv(ctx,W-44,-WAIT_EXT+2)){ctx.fillStyle='#111';rr(W-44,-WAIT_EXT+2,40,22,3);ctx.fill();ctx.fillStyle='#3b7de3';ctx.fillRect(W-41,-WAIT_EXT+5,34,16);}
+  // Every location has its own appliances at the back wall; customers come later and cover them.
+  const hallSet=customerVisualChapter()??null,appliance=kind=>globalThis.PptWaitingHall?.draw(ctx,kind,hallSet,nw,W)===true;
+  if(lv('cooler')&&!appliance('cooler')&&!globalThis.PptEnvironmentSample?.cooler(ctx,winX(0)-6,-WAIT_EXT)){ctx.fillStyle='#cfe7f5';rr(4,-WAIT_EXT+4,12,20,3);ctx.fill();ctx.fillStyle='#5bb6e6';rr(5,-WAIT_EXT,10,8,3);ctx.fill();}
+  if(lv('coffee')&&!appliance('coffee')&&!globalThis.PptEnvironmentSample?.coffee(ctx,winX(0)+18,-WAIT_EXT+6)){ctx.fillStyle='#6b4a36';rr(19,-WAIT_EXT+6,14,16,3);ctx.fill();ctx.fillStyle='#d9c0a0';ctx.fillRect(23,-WAIT_EXT+14,6,5);}
+  if(lv('tv')&&!appliance('tv')&&!globalThis.PptEnvironmentSample?.tv(ctx,W-44,-WAIT_EXT+2)){ctx.fillStyle='#111';rr(W-44,-WAIT_EXT+2,40,22,3);ctx.fill();ctx.fillStyle='#3b7de3';ctx.fillRect(W-41,-WAIT_EXT+5,34,16);}
   // counter split into windows
   if(!globalThis.PptEnvironmentSample?.counter(ctx,W,COUNTER_Y,COUNTER_H,nw)){
     ctx.fillStyle='#8a5a3b';ctx.fillRect(0,COUNTER_Y,W,COUNTER_H);ctx.fillStyle='#a8714c';ctx.fillRect(0,COUNTER_Y,W,4);
@@ -1783,6 +1796,7 @@ function syncHud(){
   $('hCash').textContent=money(shownCash);$('hCash').classList.toggle('neg',shownCash<0);
   $('hStars').textContent='★'+displayedRating(stars());
   const playing=G&&mode==='play';
+  $('app').classList.toggle('onShift',!!playing);
   const toolsButton=$('bHouseTools');
   if(toolsButton){
     toolsButton.hidden=!(playing&&(perksHome()||townToolsAvailable())&&!menuOpen&&!paused&&!networkPaused&&!settingsOpen);
@@ -2614,7 +2628,7 @@ function showCampaignMap(){
   }
   if(NETWORK.journeyGuide==='map_view'){
     const message=ru?'Здесь виден путь и цели главы: смены, клиенты, рейтинг, сотрудник и запас денег. Выполняй их параллельно — когда всё готово, откроется переезд.':'This map tracks shifts, customers, rating, staff and cash. Work on the goals together; once they are all met, you can move on.';
-    html=html.replace('<div class="campaignActions">','<div class="campaignActions journeyGuideSticky">'+journeyPanel(message));html=journeyHighlight(html,'campaignContinue');
+    html=html.replace('<div class="campaignActions">','<div class="campaignActions journeyGuideSticky">'+journeyPanel(message));html=journeyHighlight(html,'campaignContinue').replace('<ul class="campaignGoals">','<ul class="campaignGoals" data-guide-highlight="true">');
   }
   return html;});
 }
@@ -3357,11 +3371,14 @@ function guideDiscover(){
   // Migrate purchases in older saves to the once-per-type acknowledgement.
   const seenItem=id=>seen.some(key=>guideItemId(key)===id);
   for(const it of SHOP)if((S.up[it.id]||0)>0&&!seenItem(it.id))seen.push('upgrade:'+it.id+':1');
+  // The waiting area has one lesson, under its first step; any step known from
+  // an older save counts as the lesson read.
+  if(WAITING.some(it=>seenItem(it.id))&&!seenItem(WAITING[0].id))seen.push('upgrade:'+WAITING[0].id+':1');
   // Older versions queued additional levels. Discard those and already-bought
   // types without changing the saved acknowledgement format.
   const pending=original.filter(key=>{const id=guideItemId(key),it=SHOP.find(item=>item.id===id);
-    if(!it||campaignTechLocked(id)||key!=='upgrade:'+id+':1'||lv(id)>0||seenItem(id)||ids.has(id))return false;ids.add(id);return true;});
-  for(const it of SHOP){if(shopOffer(it).lock)continue;const key='upgrade:'+it.id+':1';
+    if(!it||it.part&&it!==WAITING[0]||campaignTechLocked(id)||key!=='upgrade:'+id+':1'||lv(id)>0||seenItem(id)||ids.has(id))return false;ids.add(id);return true;});
+  for(const it of SHOP){if(it.part&&it!==WAITING[0]||shopOffer(it).lock)continue;const key='upgrade:'+it.id+':1';
     if(lv(it.id)===0&&(calendarDay()>=it.d||(it.id==='locker'&&storyLockerAvailable()))&&(!it.req||lv(it.req))&&!seenItem(it.id)&&!ids.has(it.id)){pending.push(key);ids.add(it.id);}}
   if(JSON.stringify(pending)!==JSON.stringify(original)||JSON.stringify(seen)!==JSON.stringify(Array.isArray(previousSeen)?previousSeen:[])){
     NETWORK.guidePending=pending;NETWORK.guideSeen=seen;
@@ -3393,9 +3410,7 @@ const GUIDE_EXPLANATIONS={
     tune:'С этим улучшением робот будет быстрее разбирать посылки.',
     ai:'Помощник возьмёт на себя выдачу в отдельном окне и разгрузит очередь.',
     brand:'Пункт станет узнаваемее и будет получать больше за каждую выданную посылку.',
-    cooler:'Пока люди ждут, вода поможет им немного дольше сохранять терпение.',
-    coffee:'Кофе поможет посетителям спокойнее ждать своей очереди.',
-    tv:'Телевизор займёт посетителей, чтобы ожидание не казалось таким долгим.'
+    cooler:'Здесь появятся кулер, потом кофемашина и телевизор: с каждым шагом посетители спокойнее ждут своей очереди.'
   },
   en:{
     scanner:'Pick up a parcel and follow the blue outline. A red outline means its destination is full.',
@@ -3414,9 +3429,7 @@ const GUIDE_EXPLANATIONS={
     tune:'This helps your robot put packages away faster.',
     ai:'The assistant handles a service window and helps take pressure off the queue.',
     brand:'A better-known pickup point earns more for every package handed out.',
-    cooler:'Water helps waiting customers stay patient a little longer.',
-    coffee:'Coffee helps visitors stay calm while they wait.',
-    tv:'A TV gives visitors something to watch while they wait.'
+    cooler:'A water cooler comes first, then a coffee machine and a TV: each step helps visitors wait more calmly.'
   }
 };
 function guideNarratorHeader(){
@@ -3424,7 +3437,7 @@ function guideNarratorHeader(){
 }
 function guideItemPanel(hint){
   if(!hint)return '';
-  const name=STR[lang].items[hint.it.id][0],explanation=hint.it.id==='locker'&&storyLockerAvailable()?storyLockerExplanation():GUIDE_EXPLANATIONS[lang]?.[hint.it.id]||STR[lang].items[hint.it.id][1];
+  const name=STR[lang].items[hint.it.part||hint.it.id][0],explanation=hint.it.id==='locker'&&storyLockerAvailable()?storyLockerExplanation():GUIDE_EXPLANATIONS[lang]?.[hint.it.id]||STR[lang].items[hint.it.id][1];
   // The first lesson introduces the narrator's role; after an upgrade has
   // been acknowledged (or already purchased in an older save), get straight
   // to the item's name and its useful explanation.
@@ -3475,11 +3488,30 @@ function shopBtn(it,offer,travel){const {level,day,price,lock,canBuy}=offer;
   if(lock==='day')return '<button type="button" disabled>'+t('lockDay',day)+'</button>';
   if(lock==='robot')return '<button type="button" disabled>'+t('needRobot')+'</button>';
   return '<button type="button" data-a="buy" data-v="'+it.id+(travel?':'+level:'')+'"'+(canBuy?'':' disabled')+'>'+money(price)+'</button>';}
+// The cooler, the coffee machine and the TV are steps of one offer. Every step
+// keeps its own saved id, so older saves with any of them need no migration.
+const WAITING=SHOP.filter(it=>it.part==='waiting');
+function waitingArea(home=null){
+  const level=it=>home?travelUpgradeLevel(home,it.id):lv(it.id);
+  return {owned:WAITING.filter(it=>level(it)>0),next:WAITING.find(it=>level(it)<1)||null};
+}
+function waitingItem(home,featured){
+  const {owned,next}=waitingArea(home),[name,about]=STR[lang].items.waiting,item=id=>STR[lang].items[id];
+  const offer=next?shopOffer(next,home):{level:1,day:1,price:0,lock:'owned',canBuy:false};
+  const have=owned.length?'<br>'+t('waitingHave',owned.map(it=>item(it.id)[0].toLocaleLowerCase(lang)).join(', ')):'';
+  const then=next?'<br>'+t('waitingNext',item(next.id)[0].toLocaleLowerCase(lang),item(next.id)[1]):'';
+  return '<div class="item'+(featured?.it.part||next&&shopNew(offer,home)?' itemNew':'')+'" data-item="waiting"><b>'+name+' <small style="font-weight:700">'+t('lvl',owned.length,WAITING.length)+'</small></b>'+
+    shopBtn(next||WAITING.at(-1),offer,!!home)+'<small>'+about+have+then+'</small></div>';
+}
+// New in the shop: this upgrade or its next level has opened today.
+const shopNew=(offer,home)=>!home&&!offer.lock&&offer.day>1&&offer.day===calendarDay();
 function shopItems(home=null,featured=null){
   let h='';
   for(const cat of ['staff','storage','auto','comfort','growth']){h+='<div class="cat">'+STR[lang].cats[cat]+'</div>';
-    for(const it of SHOP.filter(x=>x.cat===cat)){const offer=shopOffer(it,home),max=it.p.length,nm=it.id==='locker'&&storyLockerAvailable()?[STR[lang].items.locker[0],storyLockerExplanation()]:STR[lang].items[it.id];
-      h+='<div class="item'+(featured?.it.id===it.id?' guidePulse':'')+'"><b>'+nm[0]+(max>1?' <small style="font-weight:700">'+t('lvl',offer.level,max)+'</small>':'')+'</b>'+shopBtn(it,offer,!!home)+'<small>'+nm[1]+'</small></div>';}}
+    for(const it of SHOP.filter(x=>x.cat===cat)){
+      if(it.part){if(it===WAITING[0])h+=waitingItem(home,featured);continue;}
+      const offer=shopOffer(it,home),max=it.p.length,nm=it.id==='locker'&&storyLockerAvailable()?[STR[lang].items.locker[0],storyLockerExplanation()]:STR[lang].items[it.id];
+      h+='<div class="item'+(featured?.it.id===it.id||shopNew(offer,home)?' itemNew':'')+'"><b>'+nm[0]+(max>1?' <small style="font-weight:700">'+t('lvl',offer.level,max)+'</small>':'')+'</b>'+shopBtn(it,offer,!!home)+'<small>'+nm[1]+'</small></div>';}}
   return h;
 }
 function hiringLabel(state,network){

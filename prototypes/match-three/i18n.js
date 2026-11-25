@@ -12,7 +12,6 @@
     ['ХОДЫ','MOVES'],['Звёзды','Stars'],['Этапы','Stages'],
     ['1. Партия','1. First batch'],['2. Возвраты','2. Returns'],['3. Завал','3. Backlog'],
     ['Первая партия','First batch'],['Возвраты','Returns'],['Завал на складе','Stockroom backlog'],
-    ['Памятка ↓','Rules ↓'],['Задание ↓','Task ↓'],['К полю ↑','Back to board ↑'],
     ['Задачи партии','Round objectives'],
     ['Сортируй одинаковые по цвету и знаку коробки','Sort parcels of the same color and symbol'],
     ['Собрать посылки','Sort parcels'],
@@ -83,7 +82,7 @@
     // Round messages, overlays and canvas gallery.
     ['Собери три одинаковые коробки по цвету и фигуре.','Match three parcels of the same color and shape.'],
     ['Опусти все возвраты до нижней границы, освобождая путь.','Clear a path and drop all returns to the bottom row.'],
-    ['Спускай возвраты и освобождай препятствия — это и есть задачи партии.','Drop returns and clear obstacles to complete the round.'],
+    ['Спускай возвраты и убирай препятствия.','Drop returns and clear obstacles.'],
     ['Четыре в ряд — бонусная посылка!','Four in a row — a bonus parcel!'],
     ['Посылки отсортированы','Parcels sorted'],['Нет ходов — новая раскладка.','No moves — reshuffling the board.'],
     ['Упражнение выполнено!','Exercise complete!'],

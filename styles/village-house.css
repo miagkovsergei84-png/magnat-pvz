@@ -397,3 +397,116 @@
   .vhouse--search .vhouse__finds { flex-direction: row; align-items: center; padding-top: 3px; padding-bottom: max(3px,env(safe-area-inset-bottom)); }
   .vhouse--search .vhouse__targets, .vhouse--search .vhouse__tools > button { font-size: 13px; }
 }
+
+/* Dark wood, approved 25.11.2026 (assets/concepts/village-renovation-walnut):
+   choosing the house, its repairs and the radio. The search keeps its own look. */
+.vhouse:not(.vhouse--search) {
+  --vh-paper: #57341c;
+  --vh-ink: #fbe9c9;
+  --vh-green: #ffe9b8;
+  --vh-line: #b98a55;
+  --vh-soft: #432613;
+  color-scheme: dark;
+  background-color: #5f3a20;
+  background-image:
+    repeating-linear-gradient(90deg, #22110766 0 2px, #ffd9a014 2px 4px, transparent 4px 174px),
+    repeating-linear-gradient(91deg, #0000000d 0 1px, transparent 1px 6px),
+    radial-gradient(120% 90% at 45% 35%, #80502a 0%, #663d21 52%, #472a16 100%);
+  border: 2px solid #d8a564;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 2px #2b1509, 0 16px 72px #1a0d05cc;
+}
+.vhouse:not(.vhouse--search) .vhouse__head h2 { text-align: center; text-shadow: 0 2px 0 #2b150999; }
+.vhouse:not(.vhouse--search) h2:focus { outline: none; }
+.vhouse:not(.vhouse--search) .vhouse__summary,
+.vhouse:not(.vhouse--search) .vhouse__terms,
+.vhouse:not(.vhouse--search) .vhouse__money dt { color: #f0d9b2; max-width: none; }
+.vhouse:not(.vhouse--search) .vhouse__status { color: #ffe3b4; }
+.vhouse:not(.vhouse--search) button:focus-visible { outline-color: #ffe08a; }
+.vhouse:not(.vhouse--search) .vhouse__choice {
+  border: 1px solid #e0b677; border-radius: 10px;
+  color: #3c2212; background: linear-gradient(#fbeccd, #f2d9ae);
+}
+.vhouse:not(.vhouse--search) .vhouse__choice .vhouse__label { color: #4a2612; }
+.vhouse:not(.vhouse--search) .vhouse__choice .vhouse__perk { color: #4a321f; }
+.vhouse:not(.vhouse--search) .vhouse__choice .vhouse__style { color: #79501f; }
+.vhouse:not(.vhouse--search) .vhouse__choice--set { border-color: #ffd978; box-shadow: 0 0 0 1px #ffd978; }
+.vhouse:not(.vhouse--search) .vhouse__choice:is([aria-pressed="true"],[aria-checked="true"]) {
+  border-color: #f3cb92; box-shadow: 0 0 0 1px #f3cb92;
+  color: #fff3da; background: linear-gradient(#b04a29, #84301a);
+}
+.vhouse:not(.vhouse--search) .vhouse__choice:is([aria-pressed="true"],[aria-checked="true"]) :is(.vhouse__label,.vhouse__perk,.vhouse__style) { color: #fff3da; }
+.vhouse:not(.vhouse--search) .vhouse__choice:is([aria-pressed="true"],[aria-checked="true"]) .vhouse__label::after { content: ' ✓'; color: #fff3da; }
+.vhouse--offer .vhouse__choice::before { display: none; }
+.vhouse:not(.vhouse--search) .vhouse__pic { background: #3a2112; }
+.vhouse:not(.vhouse--search) .vhouse__primary { color: #fff4dc; background: linear-gradient(#b94e2b, #8c321b); border-color: #e7ab6c; }
+.vhouse:not(.vhouse--search) .vhouse__quiet { color: #fbe9c9; background: #4a2b19; border-color: #c58e57; }
+.vhouse:not(.vhouse--search) .vhouse__actions { justify-content: center; }
+.vhouse:not(.vhouse--search) .vhouse__money > div + div { border-color: #b98a5588; }
+.vhouse .vhouse__select { display: grid; grid-template-columns: minmax(0,1.45fr) minmax(0,1fr); gap: 11px; align-items: stretch; }
+.vhouse .vhouse__select > .vhouse__grid { grid-template-columns: minmax(0,1fr); align-content: start; gap: 6px; }
+.vhouse .vhouse__select .vhouse__choice { display: grid; grid-template-columns: 104px minmax(0,1fr); align-items: stretch; }
+.vhouse .vhouse__select .vhouse__pic { width: 100%; height: 100%; min-height: 64px; max-height: 110px; align-self: center; }
+/* The house plates have a smeared strip of sky at the very top: show the rest. */
+.vhouse .vhouse__select img.vhouse__pic { transform: scale(1.22); transform-origin: 50% 100%; clip-path: inset(18.1% 9.1% 0 9.1%); }
+.vhouse .vhouse__select .vhouse__copy { justify-content: center; gap: 2px; padding: 5px 8px; }
+.vhouse .vhouse__select .vhouse__label { font-size: 16px; }
+.vhouse .vhouse__select .vhouse__perk { font-size: 13px; line-height: 1.3; }
+.vhouse .vhouse__preview { position: relative; min-height: 210px; margin: 0; overflow: hidden; border: 2px solid #e6c088; border-radius: 12px; background: #3a2112; }
+.vhouse .vhouse__preview > :is(img,canvas) { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; }
+.vhouse .vhouse__preview > canvas { object-fit: contain; object-position: center; background: none; border-radius: 0; }
+.vhouse .vhouse__preview figcaption { position: absolute; left: 10px; bottom: 10px; max-width: calc(100% - 20px); padding: 5px 10px; border-radius: 7px; background: #3a1f10e6; color: #fff0cf; font: bold 15px/1.2 Georgia, serif; }
+.vhouse--repair { width: min(1060px, calc(100% - 32px)); max-height: calc(100dvh - 24px); }
+.vhouse--repair { overflow: hidden; }
+.vhouse--repair .vhouse__pane { display: flex; flex-direction: column; max-height: calc(100dvh - 28px); padding: clamp(14px,2.2vw,22px); }
+.vhouse--repair .vhouse__select { grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); }
+.vhouse:not(.vhouse--search) :is(.vhouse__main,.vhouse__pane) { scrollbar-color: #c58e57 #3a2112; }
+.vhouse--repair .vhouse__head, .vhouse--repair .vhouse__actions { flex: none; }
+.vhouse--repair .vhouse__head { margin-bottom: 12px; }
+.vhouse--repair .vhouse__main { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; margin: -3px; }
+.vhouse--repair .vhouse__actions:not(:empty) { position: static; margin-top: 12px; }
+.vhouse--repair .vhouse__set { padding: 0 8px; font-size: 11px; }
+.vhouse--repair .vhouse__preview { position: sticky; top: 0; max-height: min(620px, calc(100dvh - 260px)); }
+.vhouse--repair .vhouse__grid { grid-template-columns: minmax(0,1fr); }
+@media (max-width:620px) {
+  .vhouse:not(.vhouse--search) { border: 0; border-radius: 0; box-shadow: none; }
+  .vhouse .vhouse__select, .vhouse--repair .vhouse__select { grid-template-columns: minmax(0,1fr); gap: 7px; }
+  .vhouse .vhouse__preview { min-height: 0; height: clamp(128px, 23dvh, 220px); }
+  .vhouse--repair .vhouse__preview { z-index: 2; height: clamp(112px, 22dvh, 210px); box-shadow: 0 6px 12px #1a0d05aa; }
+  .vhouse--repair { height: 100%; max-height: 100dvh; }
+  .vhouse--repair .vhouse__pane { height: 100%; max-height: none; padding: max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); }
+  .vhouse--repair .vhouse__head { margin-bottom: 8px; }
+  .vhouse--repair .vhouse__head h2 { font-size: 22px; }
+  .vhouse--repair .vhouse__summary { margin-top: 3px; font-size: 12px; line-height: 1.28; }
+  .vhouse--repair .vhouse__main { flex: 1; }
+  .vhouse--repair .vhouse__actions:not(:empty) { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0,1fr); gap: 7px; margin-top: 9px; padding: 0; border: 0; background: none; }
+  .vhouse--repair .vhouse__actions button { min-width: 0; padding: 6px 8px; font-size: 14px; }
+  .vhouse .vhouse__select .vhouse__choice { grid-template-columns: minmax(84px,27%) minmax(0,1fr); min-height: 0; }
+  .vhouse--offer .vhouse__select .vhouse__pic { height: 100%; min-height: 64px; max-height: 92px; }
+  .vhouse--repair { width: 100%; }
+  .vhouse:not(.vhouse--search) .vhouse__actions:not(:empty) { border-color: #b98a55; }
+}
+@media (min-width:375px) and (max-width:620px) and (min-height:650px) {
+  .vhouse--offer:not(.vhouse--search) { border: 2px solid #d8a564; border-radius: 14px; }
+}
+/* A low screen keeps the list and the terms; the list carries its own pictures. */
+@media (max-width:620px) and (max-height:700px) { .vhouse--offer .vhouse__preview { display: none; } }
+@media (max-width:620px) and (max-height:600px) {
+  .vhouse--repair .vhouse__summary { font-size: 11px; line-height: 1.2; }
+  .vhouse--repair .vhouse__preview { height: 96px; }
+}
+@media (min-width:450px) and (orientation:landscape) and (max-height:520px) {
+  .vhouse--offer .vhouse__select { grid-template-columns: minmax(0,1fr); }
+  .vhouse--offer .vhouse__preview { display: none; }
+  .vhouse--offer .vhouse__select > .vhouse__grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .vhouse--offer .vhouse__select .vhouse__choice { display: flex; }
+  .vhouse--offer .vhouse__select .vhouse__pic { height: clamp(54px, 21dvh, 100px); min-height: 0; max-height: none; }
+  .vhouse--offer .vhouse__select img.vhouse__pic { transform: none; clip-path: none; object-position: 50% 78%; }
+  .vhouse--repair { width: calc(100% - 12px); max-height: 100dvh; }
+  .vhouse--repair .vhouse__pane { max-height: calc(100dvh - 4px); padding: 7px 12px; }
+  .vhouse--repair .vhouse__head { margin-bottom: 5px; }
+  .vhouse--repair .vhouse__head h2 { font-size: 20px; }
+  .vhouse--repair .vhouse__summary { margin-top: 1px; font-size: 11.5px; line-height: 1.25; }
+  .vhouse--repair .vhouse__preview { min-height: 0; height: calc(100dvh - 150px); max-height: none; }
+  .vhouse--repair .vhouse__actions:not(:empty) { margin-top: 6px; }
+}

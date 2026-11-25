@@ -98,7 +98,8 @@ globalThis.VillageHouseUI = (() => {
     const mask = silhouettes.get(image);
     if (!mask) return true;
     const pixel = Math.floor(y * mask.height) * mask.width + Math.floor(x * mask.width);
-    return mask.data[4 * pixel + 3] >= 40;
+    // Painted contact shadows are up to two thirds opaque; they are not the thing.
+    return mask.data[4 * pixel + 3] >= 172;
   }
   function node(tag, className, text) {
     const el = document.createElement(tag);
@@ -188,6 +189,32 @@ globalThis.VillageHouseUI = (() => {
       group.setAttribute('role',buying?'radiogroup':'group');
       group.setAttribute('aria-labelledby','vhouseTitle');
       let selected = null;
+      // The large picture beside the list shows the option under consideration.
+      const figure = labels.some(label => label.img || label.repairHome) ? node('figure','vhouse__preview') : null;
+      const caption = node('figcaption');
+      let previewed = 0;
+      function preview(label) {
+        if (!figure) return;
+        const turn = ++previewed;
+        caption.textContent = label.title;
+        if (label.repairHome) {
+          // Painted off the screen first: the earlier picture stays until then.
+          const pic=node('canvas'), level=label.repairHome.choices.length;
+          pic.width=1080;pic.height=Math.round(art.installationHeight(level)*pic.width/360);
+          pic.setAttribute('aria-hidden','true');
+          pic.hidden=true;
+          figure.append(pic,caption);
+          Promise.resolve(art.paintRepairCard(pic,label.repairHome,level)).then(()=>{
+            if (turn !== previewed || !alive()) { pic.remove(); return; }
+            pic.hidden=false;
+            figure.replaceChildren(pic,caption);
+          });
+        } else {
+          const pic=node('img');
+          pic.src=label.img;pic.alt='';pic.decoding='async';
+          figure.replaceChildren(pic,caption);
+        }
+      }
       const commit = button('vhouse__primary', action, () => {
         if (selected) finish(choose, selected.key);
       });
@@ -200,6 +227,7 @@ globalThis.VillageHouseUI = (() => {
             if (buying) c.tabIndex=c===card?0:-1;
           }
           selected = label;
+          preview(label);
           commit.disabled = false;
           commit.textContent = label.confirm || action + ' · ' + label.title;
         });
@@ -242,7 +270,12 @@ globalThis.VillageHouseUI = (() => {
         group.append(card);
         if (label.selected) card.click();
       }
-      main.append(group);
+      if (figure) {
+        if (!selected) preview(labels[0]);
+        const select=node('div','vhouse__select');
+        select.append(figure,group);
+        main.append(select);
+      } else main.append(group);
       actions.prepend(commit);
     }
     if (config.kind === 'purchase') {
@@ -463,7 +496,19 @@ globalThis.VillageHouseUI = (() => {
           }
           // A hint may accept the empty centre of a hollow object. Only do
           // so when no other painted object occupies the tapped pixel.
-          return buttons.get(fallback)?.classList.contains('vhouse__hot--hint') ? fallback : null;
+          const wanted = buttons.get(fallback);
+          if (wanted?.classList.contains('vhouse__hot--hint')) return fallback;
+          // A fingertip covers more than a thin handle or a key: a tap a few
+          // pixels beside the wanted thing, on no other thing, counts too.
+          if (wanted && !wanted.disabled) {
+            const r = wanted.getBoundingClientRect();
+            for (const reach of [5,11]) for (let turn = 0; turn < 8; turn++) {
+              const x = (e.clientX + reach * Math.cos(turn * Math.PI / 4) - r.left) / r.width;
+              const y = (e.clientY + reach * Math.sin(turn * Math.PI / 4) - r.top) / r.height;
+              if (x >= 0 && y >= 0 && x < 1 && y < 1 && opaqueAt(wanted.firstChild,x,y)) return fallback;
+            }
+          }
+          return null;
         }
         function paintItems() {
           const ids = search.pending(state);

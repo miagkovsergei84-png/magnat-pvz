@@ -177,7 +177,7 @@ function hud(){
 const message=s=>{lastMessageRu=s;$('message').textContent=tr(s);};const won=()=>normal>=LEVELS[level].count&&returns>=LEVELS[level].returns&&spoiled>=LEVELS[level].spoiled&&wrapped>=LEVELS[level].wrapped;
 const remainingGoals=()=>{const l=activeGoals();return {count:Math.max(0,l.count-normal),returns:Math.max(0,l.returns-returns),spoiled:Math.max(0,l.spoiled-spoiled),wrapped:Math.max(0,l.wrapped-wrapped)};};
 function resetRun(n){serial++;const gesture=down;down=null;releaseCapture(gesture);canvas.style.cursor='grab';level=n;moves=LEVELS[level].moves;normal=returns=spoiled=wrapped=0;mouse=moth=1;tool=null;selected=-1;highlight=[];busy=ended=false;$('overlay').hidden=true;}
-const battleIntro=()=>level===0?'Собери три одинаковые коробки по цвету и фигуре.':level===1?'Опусти все возвраты до нижней границы, освобождая путь.':'Спускай возвраты и освобождай препятствия — это и есть задачи партии.';
+const battleIntro=()=>level===0?'Собери три одинаковые коробки по цвету и фигуре.':level===1?'Опусти все возвраты до нижней границы, освобождая путь.':'Спускай возвраты и убирай препятствия.';
 function start(n){if(campaignMode&&n!==completedStages)return false;if(!campaignMode)completedStages=n;resetRun(n);tutorial=null;grid=M.fillGrid(LEVELS[level],Math.random);message(battleIntro());hud();draw();notifyCheckpoint();}
 function startTutorial(n=level,step=0,continuation=null){
   if(campaignMode&&n!==completedStages)return false;

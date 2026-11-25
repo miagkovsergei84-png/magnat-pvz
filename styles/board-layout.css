@@ -2,9 +2,20 @@
    duplicate branch heading costs a sizeable part of a phone's game field. */
 body[data-wallpaper] #app:not(.dual) #branch1>.branchHead{display:none}
 
-/* An empty hint is not an empty black bar. Settings cover the live board, so
-   its unrelated HUD and hands remain out of sight until settings close. */
-#hint:empty{display:none}
+/* The hint keeps one height for the whole shift (#app.onShift): texts of one or
+   two lines and an empty hint must not resize the field below the player's
+   finger. An empty hint is still not an empty black bar, and outside a shift it
+   gives its place to the windows. Every hint fits two lines from 360 px
+   up, three below that and one above two wide branches
+   (tests/browser-shift-field-stability-20261125.cjs).
+   Settings cover the live board, so its unrelated HUD and hands remain out of
+   sight until settings close. */
+#hint{box-sizing:border-box;flex:none;height:30px;display:flex;align-items:center;justify-content:center;line-height:14px}
+#hint,body[data-wallpaper] #hint{padding:1px 7px}
+#hint:empty{visibility:hidden}
+#app:not(.onShift) #hint:empty{display:none}
+@media(max-width:359px){#hint{height:41px;font-size:11px;line-height:13px}}
+@media(min-width:701px){#app.dual #hint{height:22px}}
 body:has(#ov:not([hidden]) [data-a="audioClose"]) :is(#hud,#networkBar,#networkTotals,#hint,#tray,.branchHead,.branchStats){visibility:hidden;pointer-events:none}
 
 /* Hand slots remain a single row and keep the same height as they fill. */
@@ -56,7 +67,8 @@ body:has(#ov:not([hidden]) [data-a="audioClose"]) :is(#hud,#networkBar,#networkT
   body[data-wallpaper] #app:not(.dual) #networkBar{grid-column:1;grid-row:2;width:100%}
   body[data-wallpaper] #app:not(.dual) #networkTotals{grid-column:1;grid-row:3}
   body[data-wallpaper] #app:not(.dual) #saveNotice{grid-column:1;grid-row:4}
-  body[data-wallpaper] #app:not(.dual) #hint{grid-column:1;grid-row:5;width:100%;box-sizing:border-box;line-height:1.35}
+  body[data-wallpaper] #app:not(.dual) #hint{grid-column:1;grid-row:5;width:100%;height:auto;display:block;box-sizing:border-box;padding:3px 7px;line-height:1.35}
+  body[data-wallpaper] #app:not(.dual) #hint:empty{display:none}
   body[data-wallpaper] #app:not(.dual) #tray{grid-column:3;grid-row:1;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label sound" "slots slots";gap:4px 8px}
   body[data-wallpaper] #app:not(.dual) #tLbl{grid-area:label}
   body[data-wallpaper] #app:not(.dual) #trayActions{grid-area:sound}
