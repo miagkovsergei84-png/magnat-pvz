@@ -18,7 +18,7 @@ globalThis.PptVkRuntime = (() => {
   // VK Storage keeps 4096 characters per value, fewer for some strings;
   // chunks are plain base64, far below either limit.
   const CHUNK = 2000, MAX_CHUNKS = 40;
-  const MANIFEST = 'ppt_save_m', META_KEY = 'ppt-vk-cloud-v1';
+  const MANIFEST = 'ppt_save_m', META_KEY = 'ppt-vk-cloud-v1', INIT_KEY = 'ppt-vk-init', INIT_WAIT = 3e3;
   const chunkKey = (slot, i) => 'ppt_save_' + slot + i;
   const UPLOAD_GAP = 120e3, HIDE_GAP = 15e3, WATCH_GAP = 30e3, RETRY_GAP = 600e3, AD_GUARD = 120e3, AD_RECHECK = 60e3;
   const CHAPTERS = {village: ['Деревня', 'Village'], town: ['Городок', 'Town'],
@@ -68,7 +68,7 @@ globalThis.PptVkRuntime = (() => {
     }
   });
 
-  function create({bridge, early = null, search = '', storage = null, now = () => Date.now(),
+  function create({bridge, early = null, search = '', storage = null, session = null, now = () => Date.now(),
     timers = globalThis, codec = defaultCodec, doc = null, saveApi = globalThis.PptSave} = {}) {
     let embedded = false;
     try {
@@ -99,7 +99,17 @@ globalThis.PptVkRuntime = (() => {
         });
       } catch (_) {}
       const init = early && early.init && typeof early.init.then === 'function' ? early.init : call('VKWebAppInit', {});
-      ready = Promise.resolve(init).then(data => !!data && data.result === true, () => false);
+      const answered = Promise.resolve(init).then(data => !!data && data.result === true, () => false);
+      // VK Web and Mobile Web process only the first Init of their page. After
+      // the game reloads itself inside it, Init stays unanswered although VK is
+      // there: an answer seen earlier in this tab stands in for it.
+      let known = false;
+      try { known = !!session && session.getItem(INIT_KEY) === '1'; } catch (_) {}
+      ready = !known ? answered : new Promise(resolve => {
+        const wait = timers.setTimeout(() => resolve(true), INIT_WAIT);
+        answered.then(ok => { timers.clearTimeout(wait); resolve(ok); });
+      });
+      answered.then(ok => { if (ok) try { session && session.setItem(INIT_KEY, '1'); } catch (_) {} });
       if (doc && typeof doc.addEventListener === 'function') {
         doc.addEventListener('visibilitychange', () => { if (doc.hidden) flushSoon(); });
       }
@@ -399,6 +409,7 @@ globalThis.PptVkRuntime = (() => {
   const page = create({bridge: globalThis.vkBridge, early: globalThis.PptVkEarly,
     search: globalThis.location ? globalThis.location.search : '',
     storage: (() => { try { return globalThis.localStorage; } catch (_) { return null; } })(),
+    session: (() => { try { return globalThis.sessionStorage; } catch (_) { return null; } })(),
     doc: globalThis.document || null});
   return Object.freeze({create, vkLanguage, hashText, codec: defaultCodec, language: page.language, connect: page.connect});
 })();
